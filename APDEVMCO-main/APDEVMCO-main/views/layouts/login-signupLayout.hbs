@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{title}} - LabSlot</title>
+  <link rel="stylesheet" href="/css/signin.css" />
+</head>
+<body>
+  {{{body}}}
+
+  {{#if (eq page "login")}}
+    <script src="/javascript/login.js"></script>
+  {{/if}}
+
+  {{#if (eq page "register")}}
+    <script src="/javascript/register.js"></script>
+  {{/if}}
+</body>
+</html>

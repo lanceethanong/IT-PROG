@@ -1,0 +1,25 @@
+<aside class="sidebar collapsed" id="sidebar">
+  <nav>
+    <button onclick="navigate('home')">
+      <img src="/assets/home.png" alt="Home" />
+      <span class="label">Home</span>
+    </button>
+
+    {{#if (eq role "Lab Technician")}}
+    <button onclick="navigate('reservation-list')">
+      <img src="/assets/reservation.png" alt="Reservation List" />
+      <span class="label">Reservation List</span>
+    </button>
+    {{/if}}
+
+    <button onclick="navigate('help')">
+      <img src="/assets/help.png" alt="Help" />
+      <span class="label">Help</span>
+    </button>
+
+    <button onclick="navigate('logout')">
+      <img src="/assets/logout.png" alt="Logout" />
+      <span class="label">Logout</span>
+    </button>
+  </nav>
+</aside>

@@ -1,0 +1,42 @@
+[
+    {
+        "_id": {
+            "$oid": "686011c9004cf3a3f2247d5b"
+        },
+        "class": "CSARCH2",
+        "number": 5,
+        "__v": 0
+    },
+    {
+        "_id": {
+            "$oid": "686010751ac5fe0c7ec6270e"
+        },
+        "class": "CCPROG3",
+        "number": 1,
+        "__v": 0
+    },
+    {
+        "_id": {
+            "$oid": "686011c9004cf3a3f2247d59"
+        },
+        "class": "STCHUIX",
+        "number": 3,
+        "__v": 0
+    },
+    {
+        "_id": {
+            "$oid": "686011c9004cf3a3f2247d5a"
+        },
+        "class": "ITNET04",
+        "number": 4,
+        "__v": 0
+    },
+    {
+        "_id": {
+            "$oid": "686011c9004cf3a3f2247d58"
+        },
+        "class": "CCAPDEV",
+        "number": 2,
+        "__v": 0
+    }
+]

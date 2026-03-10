@@ -1,0 +1,53 @@
+<h1>{{title}}</h1>
+<p>Logged in as: <strong>{{adminName}}</strong></p>
+<nav style="margin-bottom: 20px;">
+  <a href="/admin"><button>Home</button></a>
+  <a href="/admin/view-labtech"><button>View All Lab Technicians</button></a>
+  <a href="/admin/add-labtech"><button>Add Lab Technician</button></a>
+  <a href="/admin/remove-labtech"><button>Remove Lab Technician</button></a>
+  <a href="/logout"><button style="float:right;">Logout</button></a>
+</nav>
+
+{{#if (eq page "home")}}
+  <h2>Welcome, Admin!</h2>
+  <p>Select an action using the buttons above.</p>
+{{/if}}
+
+{{#if successMessage}}
+  <div style="color: green; font-weight: bold; margin-bottom: 10px;">{{successMessage}}</div>
+{{/if}}
+
+{{#if (eq page "view")}}
+  <h2>All Lab Technicians</h2>
+  <ul>
+    {{#each techs}}
+      <li><strong>{{this.username}}</strong> ({{this.email}})</li>
+    {{else}}
+      <li>No lab technicians found.</li>
+    {{/each}}
+  </ul>
+{{/if}}
+
+{{#if (eq page "add")}}
+  <h2>Add Lab Technician</h2>
+  {{#if registerError}}
+    <div style="color: red; font-weight: bold;">{{registerError}}</div>
+  {{/if}}
+  <form action="/admin/add-labtech" method="POST">
+    <label>Username: <input type="text" name="username" required></label><br>
+    <label>Email: <input type="email" name="email" required></label><br>
+    <label>Password: <input type="password" name="password" required></label><br>
+    <button type="submit">Add</button>
+  </form>
+{{/if}}
+
+{{#if (eq page "remove")}}
+  <h2>Remove Lab Technician</h2>
+  {{#if removeError}}
+    <div style="color: red; font-weight: bold;">{{removeError}}</div>
+  {{/if}}
+  <form action="/admin/remove-labtech" method="POST">
+    <label>Username: <input type="text" name="username" required></label><br>
+    <button type="submit">Remove</button>
+  </form>
+{{/if}}
