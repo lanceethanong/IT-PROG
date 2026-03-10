@@ -1,0 +1,155 @@
+<h1>Reservation List</h1>
+
+<div id="reservation-success-message" class="success-message" style="display:none;"></div>
+
+<div class="reservation-list">
+  {{#each reservations}}
+    <div class="reservation-box {{statusClass status}}" data-created="{{createdAt}}">
+      <div class="info">
+        <p><strong>Student:</strong> {{student}}</p>
+        <p><strong>Lab:</strong> {{lab}}</p>
+        <p><strong>Seat:</strong> Row {{row}}, Column {{column}}</p>
+        <p><strong>Time:</strong> {{time_start}} - {{time_end}}</p>
+        <p><strong>Date:</strong> {{formatManilaDate date}}</p>
+        <p><strong>Created At:</strong> {{createdAt}}</p>
+        <p class="status"><strong>Status:</strong> <span class="status {{statusClass status}}">{{status}}</span></p>
+      </div>
+
+        {{#unless isPast}}
+        <div class="actions">
+          {{#if (eq status "In Progress")}}
+         
+            <button class="edit-btn disabled" type="button" disabled>Edit</button>
+            <button class="delete-btn disabled" type="button" disabled>Delete</button>
+          {{else}}
+     
+            <button class="edit-btn" onclick="edit('{{_id}}', true)" type="button">Edit</button>
+            {{#if showDelete}}
+              <button class="delete-btn" onclick="del('{{_id}}')" type="button">Delete</button>
+            {{else}}
+              <button class="delete-btn disabled" type="button" disabled>Delete</button>
+            {{/if}}
+          {{/if}}
+        </div>
+      {{/unless}}
+
+    </div>
+  {{/each}}
+</div>
+
+<div id="edit-modal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <h2>Edit Reservation</h2>
+    <form id="edit-reservation-form">
+      <input type="hidden" name="id" id="edit-id" />
+<label>
+                  Date:
+                  <input type="date" name="date" id="edit-date" required />
+                </label>
+                <label>
+                  Start Time:
+                  <select name="time_start" id="edit-time-start" required>
+                    <option value="7:00 AM">7:00 AM</option>
+                    <option value="7:30 AM">7:30 AM</option>
+                    <option value="8:00 AM">8:00 AM</option>
+                    <option value="8:30 AM">8:30 AM</option>
+                    <option value="9:00 AM">9:00 AM</option>
+                    <option value="9:30 AM">9:30 AM</option>
+                    <option value="10:00 AM">10:00 AM</option>
+                    <option value="10:30 AM">10:30 AM</option>
+                    <option value="11:00 AM">11:00 AM</option>
+                    <option value="11:30 AM">11:30 AM</option>
+                    <option value="12:00 PM">12:00 PM</option>
+                    <option value="12:30 PM">12:30 PM</option>
+                    <option value="1:00 PM">1:00 PM</option>
+                    <option value="1:30 PM">1:30 PM</option>
+                    <option value="2:00 PM">2:00 PM</option>
+                    <option value="2:30 PM">2:30 PM</option>
+                    <option value="3:00 PM">3:00 PM</option>
+                    <option value="3:30 PM">3:30 PM</option>
+                    <option value="4:00 PM">4:00 PM</option>
+                    <option value="4:30 PM">4:30 PM</option>
+                    <option value="5:00 PM">5:00 PM</option>
+                    <option value="5:30 PM">5:30 PM</option>
+                    <option value="6:00 PM">6:00 PM</option>
+                    <option value="6:30 PM">6:30 PM</option>
+                  </select>
+                </label>
+                <label>
+                  End Time:
+                  <select name="time_end" id="edit-time-end" required>
+                    <option value="7:30 AM">7:30 AM</option>
+                    <option value="8:00 AM">8:00 AM</option>
+                    <option value="8:30 AM">8:30 AM</option>
+                    <option value="9:00 AM">9:00 AM</option>
+                    <option value="9:30 AM">9:30 AM</option>
+                    <option value="10:00 AM">10:00 AM</option>
+                    <option value="10:30 AM">10:30 AM</option>
+                    <option value="11:00 AM">11:00 AM</option>
+                    <option value="11:30 AM">11:30 AM</option>
+                    <option value="12:00 PM">12:00 PM</option>
+                    <option value="12:30 PM">12:30 PM</option>
+                    <option value="1:00 PM">1:00 PM</option>
+                    <option value="1:30 PM">1:30 PM</option>
+                    <option value="2:00 PM">2:00 PM</option>
+                    <option value="2:30 PM">2:30 PM</option>
+                    <option value="3:00 PM">3:00 PM</option>
+                    <option value="3:30 PM">3:30 PM</option>
+                    <option value="4:00 PM">4:00 PM</option>
+                    <option value="4:30 PM">4:30 PM</option>
+                    <option value="5:00 PM">5:00 PM</option>
+                    <option value="5:30 PM">5:30 PM</option>
+                    <option value="6:00 PM">6:00 PM</option>
+                    <option value="6:30 PM">6:30 PM</option>
+                    <option value="7:00 PM">7:00 PM</option>
+                  </select>
+                </label>
+                <label>
+                  Lab:
+                  <select name="lab" id="edit-lab" required>
+                    {{#each labs}}
+                      <option value="{{this._id}}">Lab {{this.number}} ({{this.class}})</option>
+                    {{/each}}
+                  </select>
+                </label>
+                <label>
+                  Row:
+                  <input type="number" name="row" id="edit-row" min="1" max="7" required />
+                </label>
+                <label>
+                  Column:
+                  <input type="number" name="column" id="edit-column" min="1" max="5" required />
+                </label>
+      <div style="margin-top:12px;">
+        <button type="submit">Save</button>
+        <button type="button" onclick="closeEditModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function formatManilaDate(dateStr) {
+    if (!dateStr) return "";
+    let date;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      date = new Date(dateStr + "T00:00:00-00:00");
+    } else {
+      date = new Date(dateStr);
+    }
+    date.setDate(date.getDate() + 1);
+
+    return date.getFullYear()
+      + "-" + String(date.getMonth() + 1).padStart(2, '0')
+      + "-" + String(date.getDate()).padStart(2, '0');
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    // Format reservation dates
+    document.querySelectorAll('.reservation-date').forEach(function (el) {
+      var date = el.getAttribute('data-date');
+      el.textContent = formatManilaDate(date);
+    });
+  });
+</script>
+<script src="/javascript/reservation.js"></script>

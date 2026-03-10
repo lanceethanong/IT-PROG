@@ -1,0 +1,127 @@
+[
+    {
+        "_id": {
+            "$oid": "688f29c85b054f0a8eb238e4"
+        },
+        "time_start": "11:00 AM",
+        "time_end": "12:00 PM",
+        "user": {
+            "$oid": "688f280a5b054f0a8eb23897"
+        },
+        "lab": {
+            "$oid": "686011c9004cf3a3f2247d59"
+        },
+        "date": {
+            "$date": "2025-08-04T16:00:00Z"
+        },
+        "anonymity": false,
+        "status": "Scheduled",
+        "createdAt": {
+            "$date": "2025-08-03T09:20:08.847Z"
+        },
+        "updatedAt": {
+            "$date": "2025-08-03T09:20:08.847Z"
+        },
+        "__v": 0
+    },
+    {
+        "_id": {
+            "$oid": "688f2a015b054f0a8eb2391b"
+        },
+        "time_start": "11:00 AM",
+        "time_end": "12:30 PM",
+        "user": {
+            "$oid": "688c1ee069ed22c51f004ff5"
+        },
+        "lab": {
+            "$oid": "686011c9004cf3a3f2247d5b"
+        },
+        "date": {
+            "$date": "2025-08-06T16:00:00Z"
+        },
+        "anonymity": false,
+        "status": "Scheduled",
+        "createdAt": {
+            "$date": "2025-08-03T09:21:05.993Z"
+        },
+        "updatedAt": {
+            "$date": "2025-08-03T09:21:05.993Z"
+        },
+        "__v": 0
+    },
+    {
+        "_id": {
+            "$oid": "688f2a465b054f0a8eb23961"
+        },
+        "time_start": "11:30 AM",
+        "time_end": "02:00 PM",
+        "user": {
+            "$oid": "688f26e15b054f0a8eb23881"
+        },
+        "lab": {
+            "$oid": "686011c9004cf3a3f2247d58"
+        },
+        "date": {
+            "$date": "2025-08-08T16:00:00Z"
+        },
+        "anonymity": false,
+        "status": "Scheduled",
+        "createdAt": {
+            "$date": "2025-08-03T09:22:14.895Z"
+        },
+        "updatedAt": {
+            "$date": "2025-08-03T09:22:14.895Z"
+        },
+        "__v": 0
+    },
+    {
+        "_id": {
+            "$oid": "688f2a6d5b054f0a8eb2399c"
+        },
+        "time_start": "11:00 AM",
+        "time_end": "01:00 PM",
+        "user": {
+            "$oid": "688f26e15b054f0a8eb23881"
+        },
+        "lab": {
+            "$oid": "686010751ac5fe0c7ec6270e"
+        },
+        "date": {
+            "$date": "2025-08-04T16:00:00Z"
+        },
+        "anonymity": false,
+        "status": "Scheduled",
+        "createdAt": {
+            "$date": "2025-08-03T09:22:53.554Z"
+        },
+        "updatedAt": {
+            "$date": "2025-08-03T09:22:53.554Z"
+        },
+        "__v": 0
+    },
+    {
+        "_id": {
+            "$oid": "688f2a8a5b054f0a8eb239c7"
+        },
+        "time_start": "11:00 AM",
+        "time_end": "11:30 AM",
+        "user": {
+            "$oid": "688f24515b054f0a8eb23875"
+        },
+        "lab": {
+            "$oid": "686011c9004cf3a3f2247d5a"
+        },
+        "date": {
+            "$date": "2025-08-06T16:00:00Z"
+        },
+        "anonymity": false,
+        "status": "Scheduled",
+        "createdAt": {
+            "$date": "2025-08-03T09:23:22.03Z"
+        },
+        "updatedAt": {
+            "$date": "2025-08-03T09:23:22.03Z"
+        },
+        "__v": 0
+    }
+]

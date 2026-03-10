@@ -1,0 +1,50 @@
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  margin: 40px;
+  background: #f8fafc;
+}
+nav {
+  margin-bottom: 20px;
+}
+nav button {
+  margin-right: 10px;
+  padding: 8px 16px;
+  background: #22543d;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+nav button:hover {
+  background: #18896d;
+}
+.success-message {
+  background: #d0f5e8;
+  color: #18896d;
+  border: 1px solid #a1eac8;
+  padding: 12px 18px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+.error-message {
+  background: #ffd6d6;
+  color: #ae2121;
+  border: 1px solid #ffb4b4;
+  padding: 12px 18px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+ul.labtech-list {
+  list-style: none;
+  padding: 0;
+}
+ul.labtech-list li {
+  background: #fff;
+  margin-bottom: 8px;
+  padding: 10px 16px;
+  border-radius: 5px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}

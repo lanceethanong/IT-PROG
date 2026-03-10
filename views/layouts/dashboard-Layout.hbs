@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{title}} - LabSlot</title>
+  <link rel="stylesheet" href="/css/dashboard.css" />
+  <link rel="stylesheet" href="../css/home.css">
+  <link rel="stylesheet" href="/css/reservation.css">
+</head>
+<body data-role="{{role}}" data-username="{{username}}">
+  <div class="dashboard-layout">
+    {{> dashboard-header user=username role=role }} 
+
+    <div class="dashboard-main">
+      {{> dashboard-sidebar role=role}}
+      <main class="content">
+        {{{body}}}
+        {{#if (eq role "Lab Technician")}}
+        <div class="search-wrapper" style="margin: 32px auto 0; max-width: 420px;">
+          <label for="technician-student-search" style="margin-bottom: 5px; font-weight: bold; color: #22543d;">Reserve for Student</label>
+          <input
+            type="text"
+            id="technician-student-search"
+            placeholder="Search for a student by name or email..."
+            autocomplete="off"
+            aria-label="Search students"
+          />
+          <div id="technician-student-search-results"></div>
+          <div id="technician-student-selected" class="selected-student-label"></div>
+        </div>
+        {{/if}}
+
+        
+      </main>
+    </div>
+    {{> footer }}
+  </div>
+
+<script>
+  //Gets the role of the user
+  function getRoleFromPage() {
+  return document.body.dataset.role || 'Student'; //student by defualt
+}
+  //Toggles sidebar
+function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      if (sidebar) sidebar.classList.toggle('collapsed');
+    }
+   //for display purposes 
+function getRoleFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('role');
+}
+//Redirect links from sidebar
+function navigate(type) {
+  const username = document.body.dataset.username; //username
+  const role = getRoleFromPage(); //saves the role of the user 
+
+  let basePath = '';
+
+  switch (type) {
+    case 'home': //If user clicks home redirects them back to home
+      basePath = role === 'Lab Technician' ? '/dashboard/technician' : '/dashboard/student';
+      break;
+      case 'reservation-list': // If user is admin they can view the reservation list
+      basePath = '/dashboard/technician/reservation-list';
+      break;
+    case 'help': //help page
+      basePath = role === 'Lab Technician' ? '/dashboard/technician/help' : '/dashboard/student/help';
+      break;
+    case 'logout': //sends them back to first page
+      window.location.href = '/logout';
+      return;
+  }
+
+  const query = [];
+  if (username) query.push(`username=${encodeURIComponent(username)}`); //To ensure proper routing names
+
+  window.location.href = `${basePath}?${query.join('&')}`; // So that the user will be able to go back and forth 
+}
+</script>
+
+
+
+  <script src="/javascript/dashboard.js"></script>
+</body>
+</html>
