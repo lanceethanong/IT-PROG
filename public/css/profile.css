@@ -1,0 +1,568 @@
+.profile-section {
+  max-width: 1100px;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.profile-header {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.profile-card-portrait {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 200px;
+}
+
+.profile-photo img {
+  width: 160px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 9999px;
+  border: 4px solid #059669;
+}
+
+.profile-photo button {
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #f3f4f6;
+  cursor: pointer;
+}
+
+.profile-info {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.profile-info h2 {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.profile-info p {
+  margin: 0.25rem 0;
+  color: #6b7280;
+}
+
+.profile-right {
+  flex: 1;
+  min-width: 280px;
+}
+
+.about-section h3 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+#about-text {
+  width: 100%;
+  height: 180px;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid #d1d5db;
+  resize: none;
+  font-size: 1rem;
+}
+
+.edit-buttons {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+}
+
+.edit-buttons button {
+  background-color: #2563eb;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  margin-left: 0.5rem;
+}
+
+.edit-buttons button:hover {
+  background-color: #1d4ed8;
+}
+
+.profile-field {
+  margin-bottom: 1rem;
+  min-height: 3.5rem;
+}
+
+.profile-field label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+}
+
+.profile-field p,
+.profile-field input {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.profile-field input {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 0.95rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.reservations h3,
+.account-actions h3 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.reservation-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background-color: #ffffff;
+}
+
+.reservation-item p {
+  margin: 0.25rem 0;
+}
+
+.reservation-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.edit-btn {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+.edit-btn:hover {
+  background-color: #1d4ed8;
+}
+
+.cancel-btn {
+  background-color: #dc2626;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+.cancel-btn:hover {
+  background-color: #b91c1c;
+}
+
+.anonymous {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  background-color: #f3f4f6;
+  border-radius: 0.25rem;
+}
+
+.account-actions button {
+  margin-top: 0.5rem;
+  display: block;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+}
+
+.account-actions button:first-of-type {
+  background-color: #f59e0b;
+  color: white;
+}
+
+.account-actions button:first-of-type:hover {
+  background-color: #d97706;
+}
+
+.account-actions button:last-of-type {
+  background-color: #ef4444;
+  color: white;
+}
+
+.account-actions button:last-of-type:hover {
+  background-color: #b91c1c;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  background-color: white;
+  margin: 10% auto;
+  padding: 20px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: black;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.password-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input input {
+  width: 100%;
+  padding: 0.5rem;
+  padding-right: 2rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.submit-btn {
+  background-color: #2563eb;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100%;
+  font-weight: bold;
+  margin-top: 1rem;
+}
+
+.submit-btn:hover {
+  background-color: #1d4ed8;
+}
+
+.save-btn {
+  margin-top: 0.5rem;
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+.save-btn:hover {
+  background-color: #1d4ed8;
+}
+
+.footer {
+  background-color: #22543d;
+  color: white;
+  text-align: center;
+  padding: 16px;
+}
+.delete-modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+}
+
+.delete-modal-content {
+  background-color: #fefefe;
+  margin: 15% auto;
+  padding: 20px;
+  border-radius: 8px;
+  width: 400px;
+  max-width: 80%;
+  position: relative;
+}
+
+.delete-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.delete-btn {
+  background-color: #dc3545;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.delete-btn:hover {
+  background-color: #c82333;
+}
+
+.cancel-btn {
+  background-color: #6c757d;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.cancel-btn:hover {
+  background-color: #5a6268;
+}
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: black;
+}
+    
+.delete-modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+}
+
+.delete-modal-content {
+  background-color: #fefefe;
+  margin: 15% auto;
+  padding: 20px;
+  border-radius: 8px;
+  width: 400px;
+  max-width: 80%;
+  position: relative;
+}
+
+.delete-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.delete-btn {
+  background-color: #dc3545;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.delete-btn:hover {
+  background-color: #c82333;
+}
+
+.cancel-btn {
+  background-color: #6c757d;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.cancel-btn:hover {
+  background-color: #5a6268;
+}
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: black;
+}
+
+#password-modal .modal-content {
+  background-color: #ffffff;
+  margin: 10% auto;
+  padding: 2rem;
+  border-radius: 0.5rem;
+  width: 90%;
+  max-width: 400px; 
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+#password-modal .close {
+  color: #6b7280;
+  position: absolute;
+  right: 1.5rem;
+  top: 1.5rem;
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+#password-modal .close:hover {
+  color: #1f2937;
+}
+
+#password-modal h2 {
+  color: #1f2937;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  width: 100%; 
+}
+
+#password-modal .form-group {
+  margin-bottom: 1.25rem;
+  text-align: left; 
+  width: 100%;
+  max-width: 300px; 
+  margin-left: auto;
+  margin-right: auto; 
+}
+
+#password-modal .form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #374151;
+  font-weight: 500;
+  font-size: 0.95rem;
+  text-align: left;
+}
+
+#password-modal .form-group input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+#password-modal .form-group input:focus {
+  border-color: #3b82f6;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+#password-modal button[type="submit"] {
+  width: 100%;
+  max-width: 300px;
+  display: block;
+  padding: 0.75rem;
+  background-color: #059669;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-left: auto;
+  margin-right: auto; 
+}
+
+#password-modal button[type="submit"]:hover {
+  background-color: #047857;
+}
+
+.password-input {
+  position: relative;
+}
+
+.password-input input {
+  padding-right: 2.5rem;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-password:hover {
+  color: #374151;
+}
+
+@media (max-width: 480px) {
+  #password-modal .modal-content {
+    padding: 1.5rem;
+  }
+  
+  #password-modal h2 {
+    font-size: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+  
+  #password-modal .form-group input {
+    padding: 0.65rem;
+  }
+}

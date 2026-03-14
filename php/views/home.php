@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="/public/css/home.css" />
+  <link rel="stylesheet" href="/public/css/help.css" />
+  <title>Home</title>
+</head>
+<body>
+  <?php include __DIR__ . '/partials/header.php'; ?>
+  <div class="navbar-spacer"></div>
+
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+      <h1>Reserve Your Spaces Now!</h1>
+      <p>Quick and Ez Lab Booking System without the hassles and complications</p>
+      <a href="/login"><button type="button">Get Started</button></a>
+    </div>
+  </section>
+
+  <section class="why-us">
+    <h2>Why Choose Us?</h2>
+    <div class="features">
+      <div>
+        <i class="fas fa-clock"></i>
+        <h3>Real-Time Availability</h3>
+        <p>See up-to-date lab schedules and avoid conflicts.</p>
+      </div>
+      <div>
+        <i class="fas fa-mobile-alt"></i>
+        <h3>User-Friendly Interface</h3>
+        <p>Easy to use and understandable booking system</p>
+      </div>
+      <div>
+        <i class="fas fa-bell"></i>
+        <h3>Device Compatibility</h3>
+        <p>Book your lab slot on any device at any time.</p>
+      </div>
+      <div>
+        <i class="fas fa-cogs"></i>
+        <h3>Enhanced Features &amp; Customizability</h3>
+        <p>View/edit your profile and reservations.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="how-to">
+    <h2>How to Reserve a Lab</h2>
+    <div class="steps">
+      <div>
+        <div class="step-num">1</div>
+        <h3>Sign up or Log in</h3>
+        <p>Make your own account to start lab reservations.</p>
+      </div>
+      <div>
+        <div class="step-num">2</div>
+        <h3>Select a Lab</h3>
+        <p>Choose a computer lab from the list.</p>
+      </div>
+      <div>
+        <div class="step-num">3</div>
+        <h3>Pick Date &amp; Time</h3>
+        <p>Use the calendar to find available slots.</p>
+      </div>
+      <div>
+        <div class="step-num">4</div>
+        <h3>Confirm Booking</h3>
+        <p>Review the availability of a slot at a specific time and confirm booking.</p>
+      </div>
+    </div>
+  </section>
+
+  <?php include __DIR__ . '/partials/footer.php'; ?>
+</body>
+</html>

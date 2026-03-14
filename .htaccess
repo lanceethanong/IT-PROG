@@ -1,0 +1,14 @@
+RewriteEngine On
+
+# Serve existing files/directories directly
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Map short static URLs to /public
+RewriteRule ^css/(.*)$ public/css/$1 [L]
+RewriteRule ^javascript/(.*)$ public/javascript/$1 [L]
+RewriteRule ^assets/(.*)$ public/assets/$1 [L]
+
+# Front controller for PHP routes
+RewriteRule ^ index.php [L]
