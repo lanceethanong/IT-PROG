@@ -4,18 +4,6 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   window.__ezlabsDashboardInit = true;
 
-  function getBasePath() {
-    const marker = '/dashboard';
-    const path = window.location.pathname || '';
-    const idx = path.indexOf(marker);
-    return idx >= 0 ? path.slice(0, idx) : '';
-  }
-
-  function appUrl(path) {
-    const p = path.charAt(0) === '/' ? path : '/' + path;
-    return getBasePath() + p;
-  }
-
   const menuToggle = document.querySelector('.menu-toggle');
   const sidebar = document.getElementById('sidebar');
   if (menuToggle && sidebar) {
@@ -26,35 +14,70 @@ document.addEventListener('DOMContentLoaded', function () {
 
   const searchInput = document.querySelector('.search-input[name="q"]');
   const searchResults = document.getElementById('search-results');
+  const currentUsername = (document.body && document.body.dataset && document.body.dataset.username) ? document.body.dataset.username : '';
+  const searchDataNode = document.getElementById('search-users-json');
+
+  function getBasePath() {
+    const marker = '/dashboard';
+    const path = window.location.pathname || '';
+    const idx = path.indexOf(marker);
+    return idx >= 0 ? path.slice(0, idx) : '';
+  }
 
   if (searchInput && searchResults) {
-    let debounceTimer = null;
+    let allUsers = [];
+    if (searchDataNode && searchDataNode.textContent) {
+      try {
+        const parsed = JSON.parse(searchDataNode.textContent);
+        if (Array.isArray(parsed)) {
+          allUsers = parsed;
+        }
+      } catch (err) {
+        allUsers = [];
+      }
+    }
 
-    function hideSearchResults() {
-      searchResults.innerHTML = '';
+    function hideSearchResultsIfEmpty() {
+      if (searchResults.children.length === 0) {
+        searchResults.innerHTML = '';
+      }
       searchResults.classList.remove('show');
     }
 
-    function renderSearchResults(users) {
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function renderSearchResults(users, q) {
+      if (!q) {
+        searchResults.innerHTML = '';
+        searchResults.classList.remove('show');
+        return;
+      }
+
       if (!Array.isArray(users) || users.length === 0) {
         searchResults.innerHTML = '<div class="search-result-item">No users found</div>';
         searchResults.classList.add('show');
         return;
       }
 
-      const currentUsername = document.body.dataset.username || '';
       const html = users.map(function (u) {
         const username = String(u.username || '');
         const email = String(u.email || '');
         const role = String(u.role || '');
-        const href = appUrl('/dashboard/view-profile/' + encodeURIComponent(username) + '?username=' + encodeURIComponent(currentUsername));
+        const href = getBasePath() + '/dashboard/view-profile/' + encodeURIComponent(username) + '?username=' + encodeURIComponent(currentUsername);
         return ''
-          + '<a class="search-result-item" style="text-decoration:none;" href="' + href + '">'
-          + '<img src="' + appUrl('/public/assets/profile.png') + '" alt="' + username + '" class="search-result-pic" />'
+          + '<a class="search-result-item" style="text-decoration:none; color:inherit;" href="' + href + '">'
+          + '<img src="/public/assets/profile.png" alt="' + escapeHtml(username) + '" class="search-result-pic" />'
           + '<div class="search-result-info">'
-          + '<strong>' + username + '</strong>'
-          + '<small>' + email + '</small>'
-          + '<div class="user-role-badge">' + role + '</div>'
+          + '<strong>' + escapeHtml(username) + '</strong>'
+          + '<small>' + escapeHtml(email) + '</small>'
+          + '<div class="user-role-badge">' + escapeHtml(role) + '</div>'
           + '</div>'
           + '</a>';
       }).join('');
@@ -63,109 +86,31 @@ document.addEventListener('DOMContentLoaded', function () {
       searchResults.classList.add('show');
     }
 
-    searchInput.addEventListener('input', function () {
-      const q = searchInput.value.trim();
-      if (debounceTimer) {
-        clearTimeout(debounceTimer);
+    searchInput.addEventListener('focus', function () {
+      if (searchResults.children.length > 0) {
+        searchResults.classList.add('show');
       }
+    });
+
+    searchInput.addEventListener('input', function () {
+      const q = searchInput.value.trim().toLowerCase();
       if (q.length < 1) {
-        hideSearchResults();
+        renderSearchResults([], '');
         return;
       }
 
-      debounceTimer = setTimeout(function () {
-        fetch(appUrl('/api/users/search/' + encodeURIComponent(q)))
-          .then(function (r) { return r.ok ? r.json() : []; })
-          .then(function (users) { renderSearchResults(users); })
-          .catch(function () { hideSearchResults(); });
-      }, 180);
+      const matches = allUsers.filter(function (u) {
+        const username = String(u.username || '').toLowerCase();
+        const email = String(u.email || '').toLowerCase();
+        return username.indexOf(q) !== -1 || email.indexOf(q) !== -1;
+      }).slice(0, 12);
+
+      renderSearchResults(matches, q);
     });
 
     document.addEventListener('click', function (e) {
       if (!e.target.closest('.search-wrapper')) {
-        hideSearchResults();
-      }
-    });
-  }
-
-  const studentSearchInput = document.getElementById('technician-student-search');
-  const studentSearchResults = document.getElementById('technician-student-search-results');
-
-  if (studentSearchInput && studentSearchResults) {
-    let studentDebounceTimer = null;
-
-    function hideStudentSearchResults() {
-      studentSearchResults.innerHTML = '';
-      studentSearchResults.classList.remove('show');
-    }
-
-    function pickStudentUsername(username) {
-      studentSearchInput.value = username;
-      hideStudentSearchResults();
-    }
-
-    function renderStudentSearchResults(users) {
-      const students = (Array.isArray(users) ? users : []).filter(function (u) {
-        return String(u.role || '').toLowerCase() === 'student';
-      });
-
-      if (students.length === 0) {
-        studentSearchResults.innerHTML = '<div class="search-result-item">No students found</div>';
-        studentSearchResults.classList.add('show');
-        return;
-      }
-
-      const html = students.map(function (u) {
-        const username = String(u.username || '');
-        const email = String(u.email || '');
-        return ''
-          + '<div class="search-result-item" data-username="' + username.replace(/"/g, '&quot;') + '">'
-          + '<img src="' + appUrl('/public/assets/profile.png') + '" alt="' + username + '" class="search-result-pic" />'
-          + '<div class="search-result-info">'
-          + '<strong>' + username + '</strong>'
-          + '<small>' + email + '</small>'
-          + '<div class="user-role-badge">Student</div>'
-          + '</div>'
-          + '</div>';
-      }).join('');
-
-      studentSearchResults.innerHTML = html;
-      studentSearchResults.classList.add('show');
-    }
-
-    studentSearchInput.addEventListener('input', function () {
-      const q = studentSearchInput.value.trim();
-      if (studentDebounceTimer) {
-        clearTimeout(studentDebounceTimer);
-      }
-
-      if (q.length < 1) {
-        hideStudentSearchResults();
-        return;
-      }
-
-      studentDebounceTimer = setTimeout(function () {
-        fetch(appUrl('/api/users/search/' + encodeURIComponent(q)))
-          .then(function (r) { return r.ok ? r.json() : []; })
-          .then(function (users) { renderStudentSearchResults(users); })
-          .catch(function () { hideStudentSearchResults(); });
-      }, 180);
-    });
-
-    studentSearchResults.addEventListener('click', function (e) {
-      const item = e.target.closest('.search-result-item[data-username]');
-      if (!item) {
-        return;
-      }
-      const selectedUsername = item.getAttribute('data-username') || '';
-      if (selectedUsername !== '') {
-        pickStudentUsername(selectedUsername);
-      }
-    });
-
-    document.addEventListener('click', function (e) {
-      if (!e.target.closest('#technician-student-search') && !e.target.closest('#technician-student-search-results')) {
-        hideStudentSearchResults();
+        hideSearchResultsIfEmpty();
       }
     });
   }
@@ -210,7 +155,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  // Normalize UI to selection set.
+
   slotLinks.forEach(function (link) {
     const key = link.dataset.slotKey || '';
     const clickable = link.dataset.clickable === '1';

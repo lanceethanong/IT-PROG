@@ -50,12 +50,6 @@
                         <p><strong>Time:</strong> <?= e((string) ($reservation['time_start'] ?? '')) ?> - <?= e((string) ($reservation['time_end'] ?? '')) ?></p>
                         <p><strong>Status:</strong> <span class="status <?= e(status_class((string) $reservation['status'])) ?>"><?= e((string) $reservation['status']) ?></span></p>
                       </div>
-                      <div class="actions">
-                        <form method="POST" action="/reservation/delete" style="display:inline;">
-                          <input type="hidden" name="reservation_id" value="<?= e((string) $reservation['_id']) ?>" />
-                          <button class="delete-btn" type="submit">Cancel</button>
-                        </form>
-                      </div>
                     </div>
                   <?php endforeach; ?>
                 </div>

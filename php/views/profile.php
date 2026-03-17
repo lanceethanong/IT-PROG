@@ -107,6 +107,11 @@
 
           <div class="account-actions">
             <h3>Account Actions</h3>
+            <?php if (!empty($passwordFlash) && is_array($passwordFlash)): ?>
+              <p style="margin: 8px 0 12px; font-weight: 600; color: <?= (($passwordFlash['type'] ?? '') === 'success') ? '#166534' : '#b91c1c' ?>;">
+                <?= e((string) ($passwordFlash['message'] ?? '')) ?>
+              </p>
+            <?php endif; ?>
             <button type="submit" form="change-password-nav-form">Change Password</button>
             <button type="submit" form="delete-account-form">Delete Account</button>
 

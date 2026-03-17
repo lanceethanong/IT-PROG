@@ -348,6 +348,14 @@ function build_dashboard_view_data(string $needRole, array $ctx, ?int $forcedLab
         $seatRows[] = $cols;
     }
 
+    $studentUsernames = [];
+    foreach (users_all() as $user) {
+        if ((string) ($user['role'] ?? '') === 'Student') {
+            $studentUsernames[] = (string) ($user['username'] ?? '');
+        }
+    }
+    sort($studentUsernames, SORT_NATURAL | SORT_FLAG_CASE);
+
     return [
         'title' => $needRole === 'Lab Technician' ? 'Technician Dashboard' : 'Student Dashboard',
         'username' => $ctx['username'],
@@ -369,6 +377,7 @@ function build_dashboard_view_data(string $needRole, array $ctx, ?int $forcedLab
         'queryBase' => $queryBase,
         'searchQuery' => $searchQuery,
         'searchResults' => $searchResults,
+        'studentUsernames' => $studentUsernames,
         'studentQuery' => $studentQuery,
         'reserveError' => request_query('reserveError', ''),
         'reserveSuccess' => request_query('reserveSuccess', ''),
@@ -840,6 +849,8 @@ if ($method === 'GET' && ($path === '/dashboard/technician/profile' || $path ===
     }
 
     [$upcoming, $past] = build_user_reservations($username);
+    $passwordFlash = $_SESSION['passwordFlash'] ?? null;
+    unset($_SESSION['passwordFlash']);
 
     render_view('profile', [
         'title' => $needRole . ' Profile',
@@ -848,6 +859,7 @@ if ($method === 'GET' && ($path === '/dashboard/technician/profile' || $path ===
         'description' => (string) ($user['description'] ?? ''),
         'upcomingReservations' => $upcoming,
         'pastReservations' => $past,
+        'passwordFlash' => is_array($passwordFlash) ? $passwordFlash : null,
     ]);
 }
 
@@ -891,16 +903,25 @@ if ($method === 'POST' && $path === '/account/change-password') {
     }
 
     if (!password_verify($currentPassword, (string) ($user['password'] ?? ''))) {
+        $_SESSION['passwordFlash'] = ['type' => 'error', 'message' => 'Current password is incorrect.'];
         redirect_to_profile_for_role($role, $username);
     }
 
-    if ($newPassword === '' || strlen($newPassword) < 8 || $newPassword !== $confirmPassword) {
+    if ($newPassword !== $confirmPassword) {
+        $_SESSION['passwordFlash'] = ['type' => 'error', 'message' => 'New passwords do not match.'];
+        redirect_to_profile_for_role($role, $username);
+    }
+
+    if ($newPassword === '' || strlen($newPassword) < 8) {
+        $_SESSION['passwordFlash'] = ['type' => 'error', 'message' => 'Password must be at least 8 characters long.'];
         redirect_to_profile_for_role($role, $username);
     }
 
     $user['password'] = password_hash($newPassword, PASSWORD_BCRYPT);
     $user['updatedAt'] = now_iso();
     users_upsert($user);
+
+    $_SESSION['passwordFlash'] = ['type' => 'success', 'message' => 'Password changed successfully.'];
 
     redirect_to_profile_for_role($role, $username);
 }
@@ -1178,521 +1199,6 @@ if ($method === 'GET' && preg_match('#^/dashboard/view-profile/(.+)$#', $path, $
         'upcomingReservations' => $upcoming,
         'pastReservations' => $past,
     ]);
-}
-
-if ($method === 'POST' && $path === '/api/log-error') {
-    $body = request_json();
-    errors_add([
-        '_id' => new_id(),
-        'message' => (string) ($body['message'] ?? 'Unknown error'),
-        'stack' => (string) ($body['stack'] ?? ''),
-        'source' => (string) ($body['source'] ?? 'Unknown'),
-        'timestamp' => now_iso(),
-        'user' => session_username(),
-    ]);
-    no_content_response();
-}
-
-if ($method === 'DELETE' && preg_match('#^/api/users/(.+)$#', $path, $m)) {
-    $needle = rawurldecode((string) $m[1]);
-    $user = users_find_by_username($needle);
-    if ($user === null) {
-        $user = users_find_by_id($needle);
-    }
-
-    if ($user === null) {
-        json_response(['error' => 'User not found'], 404);
-    }
-
-    $deleted = users_delete_by_username((string) $user['username']);
-    if (!$deleted) {
-        json_response(['error' => 'Failed to delete account'], 500);
-    }
-
-    json_response(['success' => true, 'message' => 'Account deleted successfully']);
-}
-
-if ($method === 'DELETE' && preg_match('#^/api/reservation/(.+)$#', $path, $m)) {
-    $id = (string) $m[1];
-    $reservation = reservations_find_by_id($id);
-    if ($reservation === null) {
-        json_response(['error' => 'Reservation not found'], 404);
-    }
-
-    require_login();
-    $sessionUser = $_SESSION['user'] ?? null;
-    if (!is_array($sessionUser)) {
-        json_response(['error' => 'Unauthorized'], 401);
-    }
-
-    $role = (string) ($sessionUser['role'] ?? 'Student');
-    $allowed = false;
-    if ($role === 'Lab Technician') {
-        $allowed = reservation_can_delete_technician($reservation);
-    } else {
-        $allowed = ((string) ($reservation['user'] ?? '') === (string) ($sessionUser['id'] ?? ''))
-            && reservation_can_delete_student($reservation);
-    }
-
-    if (!$allowed) {
-        json_response(['error' => 'Delete not allowed at this time'], 403);
-    }
-
-    reservations_delete($id);
-    json_response(['success' => true, 'message' => 'Reservation deleted successfully']);
-}
-
-if ($method === 'DELETE' && preg_match('#^/api/reservations/(.+)$#', $path, $m)) {
-    $id = (string) $m[1];
-    $reservation = reservations_find_by_id($id);
-    if ($reservation === null) {
-        json_response(['error' => 'Reservation not found'], 404);
-    }
-
-    require_login();
-    $sessionUser = $_SESSION['user'] ?? null;
-    if (!is_array($sessionUser)) {
-        json_response(['error' => 'Unauthorized'], 401);
-    }
-
-    $role = (string) ($sessionUser['role'] ?? 'Student');
-    $allowed = false;
-    if ($role === 'Lab Technician') {
-        $allowed = reservation_can_delete_technician($reservation);
-    } else {
-        $allowed = ((string) ($reservation['user'] ?? '') === (string) ($sessionUser['id'] ?? ''))
-            && reservation_can_delete_student($reservation);
-    }
-
-    if (!$allowed) {
-        json_response(['error' => 'Delete not allowed at this time'], 403);
-    }
-
-    reservations_delete($id);
-    json_response(['success' => true, 'message' => 'Reservation deleted successfully']);
-}
-
-if ($method === 'POST' && preg_match('#^/api/users/(.+)/change-password$#', $path, $m)) {
-    $username = rawurldecode((string) $m[1]);
-    $body = request_json();
-    $currentPassword = (string) ($body['currentPassword'] ?? '');
-    $newPassword = (string) ($body['newPassword'] ?? '');
-
-    $user = users_find_by_username($username);
-    if ($user === null) {
-        json_response(['error' => 'User not found'], 404);
-    }
-
-    if (!password_verify($currentPassword, (string) ($user['password'] ?? ''))) {
-        json_response(['error' => 'Current password is incorrect'], 401);
-    }
-
-    $user['password'] = password_hash($newPassword, PASSWORD_BCRYPT);
-    $user['updatedAt'] = now_iso();
-    users_upsert($user);
-
-    json_response(['success' => true, 'message' => 'Password updated successfully']);
-}
-
-if ($method === 'PUT' && preg_match('#^/api/users/(.+)$#', $path, $m)) {
-    $needle = rawurldecode((string) $m[1]);
-    $body = request_json();
-    $description = (string) ($body['description'] ?? '');
-
-    $user = users_find_by_username($needle);
-    if ($user === null) {
-        $user = users_find_by_id($needle);
-    }
-
-    if ($user === null) {
-        json_response(['error' => 'User not found'], 404);
-    }
-
-    $user['description'] = $description;
-    $user['updatedAt'] = now_iso();
-    users_upsert($user);
-
-    json_response(['success' => true, 'user' => user_without_password($user)]);
-}
-
-if ($method === 'GET' && preg_match('#^/api/users/search/(.*)$#', $path, $m)) {
-    $query = strtolower(rawurldecode((string) $m[1]));
-    $matches = [];
-
-    foreach (users_all() as $user) {
-        $username = strtolower((string) ($user['username'] ?? ''));
-        $email = strtolower((string) ($user['email'] ?? ''));
-        if ($query === '' || str_contains($username, $query) || str_contains($email, $query)) {
-            $matches[] = user_without_password($user);
-        }
-    }
-
-    json_response($matches);
-}
-
-if ($method === 'GET' && $path === '/api/labs') {
-    json_response(labs_all());
-}
-
-if ($method === 'GET' && preg_match('#^/api/labs/(\d+)/check-availability$#', $path, $m)) {
-    $labNumber = (int) $m[1];
-    $date = (string) request_query('date', '');
-    $timeStart = (string) request_query('time_start', '');
-    $timeEnd = (string) request_query('time_end', '');
-
-    if ($date === '' || $timeStart === '' || $timeEnd === '') {
-        json_response(['error' => 'Missing required query parameters: date, time_start, time_end'], 400);
-    }
-
-    $lab = labs_find_by_number($labNumber);
-    if ($lab === null) {
-        json_response(['error' => 'Lab not found'], 404);
-    }
-
-    $candidate = [
-        'lab' => $lab['_id'],
-        'date' => format_manila_date($date),
-        'time_start' => $timeStart,
-        'time_end' => $timeEnd,
-    ];
-
-    $occupied = [];
-    foreach (reservations_all() as $reservation) {
-        if ((string) ($reservation['lab'] ?? '') !== (string) ($lab['_id'] ?? '')) {
-            continue;
-        }
-
-        if (reservation_date_only($reservation) !== $candidate['date']) {
-            continue;
-        }
-
-        $s1 = parse_time_to_minutes((string) ($reservation['time_start'] ?? ''));
-        $e1 = parse_time_to_minutes((string) ($reservation['time_end'] ?? ''));
-        $s2 = parse_time_to_minutes($timeStart);
-        $e2 = parse_time_to_minutes($timeEnd);
-        if (!($s1 < $e2 && $e1 > $s2)) {
-            continue;
-        }
-
-        foreach (seats_for_reservation((string) ($reservation['_id'] ?? '')) as $seat) {
-            $occupied[] = ['row' => (int) $seat['row'], 'column' => (int) $seat['column']];
-        }
-    }
-
-    $available = [];
-    for ($row = 1; $row <= 7; $row++) {
-        for ($column = 1; $column <= 5; $column++) {
-            $found = false;
-            foreach ($occupied as $seat) {
-                if ($seat['row'] === $row && $seat['column'] === $column) {
-                    $found = true;
-                    break;
-                }
-            }
-            if (!$found) {
-                $available[] = ['row' => $row, 'column' => $column];
-            }
-        }
-    }
-
-    json_response([
-        'success' => true,
-        'availableSeats' => $available,
-        'occupiedSeats' => $occupied,
-        'totalSeats' => 35,
-        'availableCount' => count($available),
-        'occupiedCount' => count($occupied),
-    ]);
-}
-
-if ($method === 'GET' && preg_match('#^/api/labs/(.+)/available-seats$#', $path, $m)) {
-    $labId = (string) $m[1];
-    $date = (string) request_query('date', '');
-    $timeStart = (string) request_query('time_start', '');
-    $timeEnd = (string) request_query('time_end', '');
-
-    $lab = labs_find_by_id($labId);
-    if ($lab === null) {
-        json_response(['error' => 'Lab not found'], 404);
-    }
-
-    $occupied = [];
-    foreach (reservations_all() as $reservation) {
-        if ((string) ($reservation['lab'] ?? '') !== $labId) {
-            continue;
-        }
-
-        if (reservation_date_only($reservation) !== format_manila_date($date)) {
-            continue;
-        }
-
-        $rs = parse_time_to_minutes((string) ($reservation['time_start'] ?? ''));
-        $re = parse_time_to_minutes((string) ($reservation['time_end'] ?? ''));
-        $qs = parse_time_to_minutes($timeStart);
-        $qe = parse_time_to_minutes($timeEnd);
-        if (!($rs < $qe && $re > $qs)) {
-            continue;
-        }
-
-        foreach (seats_for_reservation((string) ($reservation['_id'] ?? '')) as $seat) {
-            $occupied[] = ['row' => (int) $seat['row'], 'column' => (int) $seat['column']];
-        }
-    }
-
-    $available = [];
-    for ($row = 1; $row <= 7; $row++) {
-        for ($column = 1; $column <= 5; $column++) {
-            $isOccupied = false;
-            foreach ($occupied as $seat) {
-                if ($seat['row'] === $row && $seat['column'] === $column) {
-                    $isOccupied = true;
-                    break;
-                }
-            }
-            if (!$isOccupied) {
-                $available[] = ['row' => $row, 'column' => $column];
-            }
-        }
-    }
-
-    json_response(['availableSeats' => $available, 'occupiedSeats' => $occupied]);
-}
-
-if ($method === 'GET' && preg_match('#^/api/labs/(.+)$#', $path, $m)) {
-    $id = (string) $m[1];
-    $lab = labs_find_by_id($id);
-    if ($lab === null) {
-        json_response(['error' => 'Lab not found'], 404);
-    }
-    json_response($lab);
-}
-
-if ($method === 'POST' && $path === '/api/labs') {
-    $body = request_json();
-    $lab = labs_insert([
-        '_id' => new_id(),
-        'class' => (string) ($body['class'] ?? ''),
-        'number' => (int) ($body['number'] ?? 0),
-        'createdAt' => now_iso(),
-        'updatedAt' => now_iso(),
-    ]);
-    json_response($lab, 201);
-}
-
-if ($method === 'GET' && $path === '/api/users') {
-    $users = array_map('user_without_password', users_all());
-    json_response($users);
-}
-
-if ($method === 'GET' && preg_match('#^/api/users/(.+)/reservations$#', $path, $m)) {
-    $userId = (string) $m[1];
-    $result = [];
-    foreach (reservations_all() as $reservation) {
-        if ((string) ($reservation['user'] ?? '') !== $userId) {
-            continue;
-        }
-
-        $lab = labs_find_by_id((string) ($reservation['lab'] ?? ''));
-        $enriched = $reservation;
-        $enriched['lab'] = $lab;
-        $enriched['status'] = reservation_status($reservation);
-        $enriched['date'] = reservation_date_only($reservation);
-        $result[] = $enriched;
-    }
-    usort($result, static fn(array $a, array $b): int => strcmp((string) ($b['date'] ?? ''), (string) ($a['date'] ?? '')));
-    json_response($result);
-}
-
-if ($method === 'GET' && preg_match('#^/api/users/(.+)$#', $path, $m)) {
-    $needle = rawurldecode((string) $m[1]);
-    $user = users_find_by_id($needle);
-    if ($user === null) {
-        $user = users_find_by_username($needle);
-    }
-
-    if ($user === null) {
-        json_response(['error' => 'User not found'], 404);
-    }
-
-    json_response(user_without_password($user));
-}
-
-if ($method === 'POST' && $path === '/api/users') {
-    $body = request_json();
-    $user = [
-        '_id' => new_id(),
-        'email' => (string) ($body['email'] ?? ''),
-        'username' => (string) ($body['username'] ?? ''),
-        'description' => (string) ($body['description'] ?? ''),
-        'remember' => false,
-        'password' => password_hash((string) ($body['password'] ?? 'password123'), PASSWORD_BCRYPT),
-        'picture' => 'picture.jpg',
-        'role' => (string) ($body['role'] ?? 'Student'),
-        'createdAt' => now_iso(),
-        'updatedAt' => now_iso(),
-    ];
-    users_upsert($user);
-    json_response(user_without_password($user), 201);
-}
-
-if ($method === 'GET' && $path === '/api/reservations') {
-    $rows = [];
-    foreach (reservations_all() as $reservation) {
-        $rows[] = enrich_reservation($reservation);
-    }
-    json_response($rows);
-}
-
-if ($method === 'POST' && $path === '/api/reservations') {
-    $body = request_json();
-    $timeStart = (string) ($body['time_start'] ?? '');
-    $timeEnd = (string) ($body['time_end'] ?? '');
-    $username = (string) ($body['user'] ?? '');
-    $labNumber = (int) ($body['lab'] ?? 0);
-    $date = isset($body['date']) ? format_manila_date((string) $body['date']) : '';
-    $seats = is_array($body['seats'] ?? null) ? $body['seats'] : [];
-
-    if ($timeStart === '' || $timeEnd === '' || $username === '' || $labNumber === 0 || $date === '') {
-        json_response(['error' => 'Missing required fields: time_start, time_end, user, lab, date'], 400);
-    }
-
-    if ($seats === []) {
-        json_response(['error' => 'At least one seat must be selected'], 400);
-    }
-
-    $user = users_find_by_username($username);
-    if ($user === null) {
-        json_response(['error' => 'User not found'], 404);
-    }
-
-    $lab = labs_find_by_number($labNumber);
-    if ($lab === null) {
-        json_response(['error' => 'Lab not found'], 404);
-    }
-
-    $candidate = [
-        'lab' => (string) $lab['_id'],
-        'date' => $date,
-        'time_start' => $timeStart,
-        'time_end' => $timeEnd,
-    ];
-
-    if (reservation_conflicts($candidate, $seats)) {
-        json_response(['error' => 'One or more selected seats are already reserved for this time slot'], 409);
-    }
-
-    $reservation = [
-        '_id' => new_id(),
-        'time_start' => $timeStart,
-        'time_end' => $timeEnd,
-        'user' => (string) $user['_id'],
-        'lab' => (string) $lab['_id'],
-        'date' => $date,
-        'anonymity' => (bool) ($body['anonymity'] ?? false),
-        'status' => 'Scheduled',
-        'createdAt' => now_iso(),
-        'updatedAt' => now_iso(),
-    ];
-
-    $all = reservations_all();
-    $all[] = $reservation;
-    reservations_save($all);
-    seats_replace_for_reservation((string) $reservation['_id'], $seats);
-
-    json_response([
-        'success' => true,
-        'message' => 'Reservation created successfully',
-        'reservationId' => $reservation['_id'],
-        'reservation' => [
-            '_id' => $reservation['_id'],
-            'time_start' => $timeStart,
-            'time_end' => $timeEnd,
-            'date' => $date,
-            'user' => (string) $user['username'],
-            'lab' => 'Lab ' . $lab['number'] . ' (' . $lab['class'] . ')',
-            'seats' => $seats,
-        ],
-    ], 201);
-}
-
-if ($method === 'GET' && preg_match('#^/api/reservations/(.+)$#', $path, $m)) {
-    $id = (string) $m[1];
-    $reservation = reservations_find_by_id($id);
-    if ($reservation === null) {
-        json_response(['error' => 'Reservation not found'], 404);
-    }
-
-    $seat = seats_for_reservation($id)[0] ?? [];
-    json_response(enrich_reservation($reservation, $seat));
-}
-
-if ($method === 'PUT' && preg_match('#^/api/reservations/(.+)$#', $path, $m)) {
-    $id = (string) $m[1];
-    $body = request_json();
-
-    $all = reservations_all();
-    $found = null;
-    foreach ($all as $i => $reservation) {
-        if ((string) ($reservation['_id'] ?? '') === $id) {
-            $found = $i;
-            break;
-        }
-    }
-    if ($found === null) {
-        json_response(['error' => 'Reservation not found'], 404);
-    }
-
-    $existing = $all[$found];
-
-    $date = isset($body['date']) ? format_manila_date((string) $body['date']) : reservation_date_only($existing);
-    $candidate = [
-        'lab' => (string) ($body['lab'] ?? $existing['lab']),
-        'date' => $date,
-        'time_start' => (string) ($body['time_start'] ?? $existing['time_start']),
-        'time_end' => (string) ($body['time_end'] ?? $existing['time_end']),
-    ];
-
-    $candidateSeats = [[
-        'row' => (int) ($body['row'] ?? (seats_for_reservation($id)[0]['row'] ?? 1)),
-        'column' => (int) ($body['column'] ?? (seats_for_reservation($id)[0]['column'] ?? 1)),
-    ]];
-
-    if (reservation_conflicts($candidate, $candidateSeats, $id)) {
-        json_response(['error' => 'This seat is already reserved for the selected time slot'], 409);
-    }
-
-    $existing['time_start'] = $candidate['time_start'];
-    $existing['time_end'] = $candidate['time_end'];
-    $existing['date'] = $date;
-    $existing['lab'] = $candidate['lab'];
-    $existing['updatedAt'] = now_iso();
-    $all[$found] = $existing;
-    reservations_save($all);
-
-    seats_replace_for_reservation($id, $candidateSeats);
-
-    json_response(enrich_reservation($existing, $candidateSeats[0]));
-}
-
-if ($method === 'GET' && $path === '/api/seat-lists') {
-    $rows = [];
-    foreach (seats_all() as $seat) {
-        $reservation = reservations_find_by_id((string) ($seat['reservation'] ?? ''));
-        if ($reservation === null) {
-            continue;
-        }
-        $rows[] = [
-            '_id' => (string) ($seat['_id'] ?? ''),
-            'reservation' => enrich_reservation($reservation),
-            'row' => (int) ($seat['row'] ?? 0),
-            'column' => (int) ($seat['column'] ?? 0),
-        ];
-    }
-    json_response($rows);
-}
-
-if ($method === 'GET' && preg_match('#^/api/seat-lists/reservation/(.+)$#', $path, $m)) {
-    json_response(seats_for_reservation((string) $m[1]));
 }
 
 route_not_found();

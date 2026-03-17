@@ -3,6 +3,18 @@
   <div class="welcome-text">Welcome, <?= e($username) ?></div>
   <h1 class="site-title">EZLabs</h1>
 
+  <?php
+    $headerSearchUsers = [];
+    foreach (users_all() as $u) {
+      $headerSearchUsers[] = [
+        'username' => (string) ($u['username'] ?? ''),
+        'email' => (string) ($u['email'] ?? ''),
+        'role' => (string) ($u['role'] ?? ''),
+      ];
+    }
+  ?>
+  <script id="search-users-json" type="application/json"><?= (string) json_encode($headerSearchUsers, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?></script>
+
   <div class="search-wrapper">
     <form class="search-container" method="GET" action="/dashboard/search-user">
       <input type="hidden" name="username" value="<?= e($username) ?>" />
@@ -25,7 +37,26 @@
         </svg>
       </button>
     </form>
-    <div class="search-results" id="search-results"></div>
+    <div class="search-results<?= (!empty($searchResults) || (!empty($searchQuery) && empty($searchResults))) ? ' show' : '' ?>" id="search-results">
+      <?php if (!empty($searchResults)): ?>
+        <?php foreach (($searchResults ?? []) as $u): ?>
+          <a
+            class="search-result-item"
+            style="text-decoration:none; color:inherit;"
+            href="/dashboard/view-profile/<?= rawurlencode((string) ($u['username'] ?? '')) ?>?username=<?= rawurlencode((string) $username) ?>"
+          >
+            <img src="/public/assets/profile.png" alt="<?= e((string) ($u['username'] ?? '')) ?>" class="search-result-pic" />
+            <div class="search-result-info">
+              <strong><?= e((string) ($u['username'] ?? '')) ?></strong>
+              <small><?= e((string) ($u['email'] ?? '')) ?></small>
+              <div class="user-role-badge"><?= e((string) ($u['role'] ?? '')) ?></div>
+            </div>
+          </a>
+        <?php endforeach; ?>
+      <?php elseif (!empty($searchQuery)): ?>
+        <div class="search-result-item">No users found</div>
+      <?php endif; ?>
+    </div>
   </div>
 
   <a href="/dashboard/<?= e(normalize_role_for_path($role)) ?>/profile?username=<?= rawurlencode($username) ?>" class="profile-link">

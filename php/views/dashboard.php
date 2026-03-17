@@ -140,10 +140,15 @@
                       id="technician-student-search"
                       name="student_username"
                       value="<?= e((string) ($studentQuery ?? '')) ?>"
+                      list="student-usernames"
                       autocomplete="off"
                       required
                     />
-                    <div id="technician-student-search-results"></div>
+                    <datalist id="student-usernames">
+                      <?php foreach (($studentUsernames ?? []) as $studentUsername): ?>
+                        <option value="<?= e((string) $studentUsername) ?>"></option>
+                      <?php endforeach; ?>
+                    </datalist>
                   </div>
                 </div>
               <?php else: ?>
