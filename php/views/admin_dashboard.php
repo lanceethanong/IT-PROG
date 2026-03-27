@@ -9,7 +9,7 @@
 require_once __DIR__ . '/../lib/repository.php';
 
 // ── Auth guard ────────────────────────────────────────────────
-require_role('Admin');
+require_role('Admin'); //comment out lang if you want to test admin dashboard without logging in
 $sessionUser = $_SESSION['user'] ?? [];
 $sessionName = (string) ($sessionUser['username'] ?? '');
 $sessionId   = (string) ($sessionUser['_id']      ?? '');
