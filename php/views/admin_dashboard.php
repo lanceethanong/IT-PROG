@@ -6,7 +6,7 @@
 //  on first load via events_table_ensure() inside db().
 // ============================================================
 
-require_once __DIR__ . '/src/repository.php';   // adjust path to match your project
+require_once __DIR__ . '/../lib/repository.php';
 
 // ── Auth guard ────────────────────────────────────────────────
 require_role('Admin');
