@@ -1,0 +1,1090 @@
+<?php
+// ============================================================
+//  admin_dashboard.php  —  EZLabs Admin Control Panel
+//  Requires: repository.php (which includes bootstrap.php)
+//  The events table + cancel_reason column are auto-created
+//  on first load via events_table_ensure() inside db().
+// ============================================================
+
+require_once __DIR__ . '/src/repository.php';   // adjust path to match your project
+
+// ── Auth guard ────────────────────────────────────────────────
+require_role('Admin');
+$sessionUser = $_SESSION['user'] ?? [];
+$sessionName = (string) ($sessionUser['username'] ?? '');
+$sessionId   = (string) ($sessionUser['_id']      ?? '');
+
+// ── Active tab ────────────────────────────────────────────────
+$tab          = $_GET['tab'] ?? 'overview';
+$allowedTabs  = ['overview', 'users', 'labs', 'events', 'settings'];
+if (!in_array($tab, $allowedTabs, true)) $tab = 'overview';
+
+// ── Flash ─────────────────────────────────────────────────────
+$flash = $_SESSION['admin_flash'] ?? null;
+unset($_SESSION['admin_flash']);
+
+// ═══════════════════════════════════════════════════════════════
+//  POST HANDLERS
+// ═══════════════════════════════════════════════════════════════
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['_action'] ?? '';
+
+    // ── CREATE USER ──────────────────────────────────────────
+    if ($action === 'create_user') {
+        $uname   = trim($_POST['username'] ?? '');
+        $email   = trim($_POST['email']    ?? '');
+        $pass    = trim($_POST['password'] ?? '');
+        $newRole = trim($_POST['role']     ?? 'Student');
+        if (!in_array($newRole, ['Student','Lab Technician','Admin'], true)) $newRole = 'Student';
+
+        if ($uname && $email && $pass) {
+            if (users_find_by_username($uname) || users_find_by_email($email)) {
+                $_SESSION['admin_flash'] = ['type'=>'error','msg'=>'Username or email already exists.'];
+            } else {
+                users_upsert([
+                    '_id'       => new_id(),
+                    'email'     => $email,
+                    'username'  => $uname,
+                    'password'  => password_hash($pass, PASSWORD_BCRYPT),
+                    'role'      => $newRole,
+                    'createdAt' => now_iso(),
+                    'updatedAt' => now_iso(),
+                ]);
+                $_SESSION['admin_flash'] = ['type'=>'success','msg'=>"User «{$uname}» created."];
+            }
+        } else {
+            $_SESSION['admin_flash'] = ['type'=>'error','msg'=>'All fields are required.'];
+        }
+        redirect_to('/admin_dashboard.php?tab=users');
+    }
+
+    // ── EDIT USER ────────────────────────────────────────────
+    if ($action === 'edit_user') {
+        $uid2    = trim($_POST['user_id']  ?? '');
+        $uname   = trim($_POST['username'] ?? '');
+        $email   = trim($_POST['email']    ?? '');
+        $newRole = trim($_POST['role']     ?? '');
+        $pass    = trim($_POST['password'] ?? '');
+
+        $existing = users_find_by_id($uid2);
+        if ($existing && $uname && $email) {
+            $updated             = $existing;
+            $updated['username'] = $uname;
+            $updated['email']    = $email;
+            $updated['role']     = in_array($newRole, ['Student','Lab Technician','Admin'], true) ? $newRole : $existing['role'];
+            $updated['updatedAt']= now_iso();
+            if ($pass !== '') {
+                $updated['password'] = password_hash($pass, PASSWORD_BCRYPT);
+            }
+            users_upsert($updated);
+            $_SESSION['admin_flash'] = ['type'=>'success','msg'=>"User «{$uname}» updated."];
+        } else {
+            $_SESSION['admin_flash'] = ['type'=>'error','msg'=>'User not found or missing fields.'];
+        }
+        redirect_to('/admin_dashboard.php?tab=users');
+    }
+
+    // ── DELETE USER ──────────────────────────────────────────
+    if ($action === 'delete_user') {
+        $uid2 = trim($_POST['user_id'] ?? '');
+        if ($uid2 && $uid2 !== $sessionId) {
+            $target = users_find_by_id($uid2);
+            if ($target) {
+                users_delete_by_username((string) ($target['username'] ?? ''));
+                $_SESSION['admin_flash'] = ['type'=>'success','msg'=>'User deleted.'];
+            }
+        } else {
+            $_SESSION['admin_flash'] = ['type'=>'error','msg'=>'Cannot delete your own account.'];
+        }
+        redirect_to('/admin_dashboard.php?tab=users');
+    }
+
+    // ── CREATE EVENT ──────────────────────────────────────────
+    if ($action === 'create_event') {
+        $labId  = trim($_POST['lab_id']      ?? '');
+        $name   = trim($_POST['name']        ?? '');
+        $desc   = trim($_POST['description'] ?? '');
+        $date   = trim($_POST['date']        ?? '');
+        $tStart = trim($_POST['time_start']  ?? '');
+        $tEnd   = trim($_POST['time_end']    ?? '');
+
+        if ($labId && $name && $date && $tStart && $tEnd) {
+            $event = events_insert([
+                'lab'         => $labId,
+                'name'        => $name,
+                'description' => $desc,
+                'date'        => $date,
+                'time_start'  => $tStart,
+                'time_end'    => $tEnd,
+                'created_by'  => $sessionId,
+            ]);
+            $cancelled = event_cancel_conflicting($event);
+            $msg = "Event «{$name}» scheduled.";
+            if ($cancelled > 0) {
+                $msg .= " {$cancelled} conflicting reservation(s) were cancelled and users notified.";
+            }
+            $_SESSION['admin_flash'] = ['type'=>'success','msg'=>$msg];
+        } else {
+            $_SESSION['admin_flash'] = ['type'=>'error','msg'=>'All fields except description are required.'];
+        }
+        redirect_to('/admin_dashboard.php?tab=events');
+    }
+
+    // ── EDIT EVENT ────────────────────────────────────────────
+    if ($action === 'edit_event') {
+        $evId   = trim($_POST['event_id']    ?? '');
+        $labId  = trim($_POST['lab_id']      ?? '');
+        $name   = trim($_POST['name']        ?? '');
+        $desc   = trim($_POST['description'] ?? '');
+        $date   = trim($_POST['date']        ?? '');
+        $tStart = trim($_POST['time_start']  ?? '');
+        $tEnd   = trim($_POST['time_end']    ?? '');
+
+        if ($evId && $labId && $name && $date && $tStart && $tEnd) {
+            events_update($evId, [
+                'lab'         => $labId,
+                'name'        => $name,
+                'description' => $desc,
+                'date'        => $date,
+                'time_start'  => $tStart,
+                'time_end'    => $tEnd,
+            ]);
+            // Re-run conflict cancellation with updated window.
+            $updatedEvent = events_find_by_id($evId);
+            $cancelled = $updatedEvent ? event_cancel_conflicting($updatedEvent) : 0;
+            $msg = "Event «{$name}» updated.";
+            if ($cancelled > 0) {
+                $msg .= " {$cancelled} newly conflicting reservation(s) cancelled.";
+            }
+            $_SESSION['admin_flash'] = ['type'=>'success','msg'=>$msg];
+        } else {
+            $_SESSION['admin_flash'] = ['type'=>'error','msg'=>'All fields except description are required.'];
+        }
+        redirect_to('/admin_dashboard.php?tab=events');
+    }
+
+    // ── DELETE EVENT ──────────────────────────────────────────
+    if ($action === 'delete_event') {
+        $evId = trim($_POST['event_id'] ?? '');
+        if ($evId && events_delete($evId)) {
+            $_SESSION['admin_flash'] = ['type'=>'success','msg'=>'Event deleted. Previously cancelled reservations remain cancelled.'];
+        } else {
+            $_SESSION['admin_flash'] = ['type'=>'error','msg'=>'Event not found.'];
+        }
+        redirect_to('/admin_dashboard.php?tab=events');
+    }
+
+    // ── SYSTEM SETTINGS ───────────────────────────────────────
+    if ($action === 'save_settings') {
+        $_SESSION['sys_settings'] = [
+            'site_name'      => trim($_POST['site_name']      ?? 'EZLabs'),
+            'grace_minutes'  => max(1, (int) ($_POST['grace_minutes']  ?? 10)),
+            'advance_days'   => max(1, (int) ($_POST['advance_days']   ?? 7)),
+            'cancel_minutes' => max(1, (int) ($_POST['cancel_minutes'] ?? 30)),
+            'max_seats'      => max(1, (int) ($_POST['max_seats']      ?? 35)),
+        ];
+        $_SESSION['admin_flash'] = ['type'=>'success','msg'=>'Settings saved.'];
+        redirect_to('/admin_dashboard.php?tab=settings');
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  FETCH DATA
+// ═══════════════════════════════════════════════════════════════
+
+// ── Users list ───────────────────────────────────────────────
+$search     = trim($_GET['q']           ?? '');
+$roleFilter = trim($_GET['role_filter'] ?? '');
+$page       = max(1, (int) ($_GET['p'] ?? 1));
+$perPage    = 10;
+
+$allUsers = users_all();
+$filtered = array_filter($allUsers, function (array $u) use ($search, $roleFilter): bool {
+    $matchSearch = $search === ''
+        || stripos($u['username'], $search) !== false
+        || stripos($u['email'],    $search) !== false;
+    $matchRole = $roleFilter === '' || $u['role'] === $roleFilter;
+    return $matchSearch && $matchRole;
+});
+$filtered    = array_values($filtered);
+// Sort newest first
+usort($filtered, fn($a, $b) => strcmp((string)($b['createdAt']??''), (string)($a['createdAt']??'')));
+
+$totalUsers = count($filtered);
+$totalPages = max(1, (int) ceil($totalUsers / $perPage));
+$page       = min($page, $totalPages);
+$users      = array_slice($filtered, ($page - 1) * $perPage, $perPage);
+
+// ── Events list ──────────────────────────────────────────────
+$allEvents  = events_all();
+$allLabs    = labs_all();
+// Build lab lookup: id => label
+$labById = [];
+foreach ($allLabs as $l) {
+    $labById[(string)$l['_id']] = 'Lab ' . $l['number'] . ' (' . $l['class'] . ')';
+}
+
+// ── Overview stats ───────────────────────────────────────────
+$statStudents = count(array_filter($allUsers, fn($u) => $u['role'] === 'Student'));
+$statTechs    = count(array_filter($allUsers, fn($u) => $u['role'] === 'Lab Technician'));
+$statAdmins   = count(array_filter($allUsers, fn($u) => $u['role'] === 'Admin'));
+$statLabs     = count($allLabs);
+$allRes       = reservations_all();
+$statRes      = count(array_filter($allRes, fn($r) => reservation_status($r) === 'Scheduled'));
+$statEvents   = count($allEvents);
+
+// ── System settings ───────────────────────────────────────────
+$settings = $_SESSION['sys_settings'] ?? [
+    'site_name'      => 'EZLabs',
+    'grace_minutes'  => 10,
+    'advance_days'   => 7,
+    'cancel_minutes' => 30,
+    'max_seats'      => 35,
+];
+
+// ── Time options for event form (7 AM – 10 PM in 30-min steps) ─
+$timeOptions = [];
+for ($h = 7; $h <= 22; $h++) {
+    foreach ([0, 30] as $m) {
+        if ($h === 22 && $m === 30) break;
+        $ampm   = $h < 12 ? 'AM' : 'PM';
+        $hour12 = $h % 12 ?: 12;
+        $timeOptions[] = sprintf('%d:%02d %s', $hour12, $m, $ampm);
+    }
+}
+
+?><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard — EZLabs</title>
+  <style>
+    /* ═══ RESET ══════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:        #0f1117;
+      --surface:   #181c27;
+      --surface2:  #1e2336;
+      --border:    #2a3050;
+      --accent:    #5eead4;
+      --accent2:   #e07fa0;
+      --text:      #e8eaf0;
+      --muted:     #8892b0;
+      --danger:    #f87171;
+      --success:   #4ade80;
+      --warn:      #fbbf24;
+      --event:     #a78bfa;   /* purple for events */
+      --radius:    10px;
+      --sidebar-w: 240px;
+      --font:      'DM Sans', 'Segoe UI', system-ui, sans-serif;
+      --mono:      'JetBrains Mono', 'Fira Code', monospace;
+    }
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+    html { font-size: 15px; }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--surface); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ═══ LAYOUT ════════════════════════════════════════════ */
+    .app    { display: flex; height: 100vh; overflow: hidden; }
+    .main   { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .content{ flex: 1; overflow-y: auto; padding: 28px 32px; }
+
+    /* ─── Sidebar ───────────────────────────────────────────── */
+    .sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; }
+    .sidebar-logo { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); }
+    .sidebar-logo h1 { font-size: 1.35rem; font-weight: 700; color: var(--accent); letter-spacing: -.5px; }
+    .sidebar-logo span { font-size: .7rem; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); font-weight: 500; }
+    .sidebar-nav { padding: 12px 0; flex: 1; }
+    .nav-section-label { font-size: .65rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); padding: 14px 20px 6px; font-weight: 600; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 20px; text-decoration: none; color: var(--muted); font-size: .875rem; font-weight: 500; border-left: 3px solid transparent; transition: all .15s ease; }
+    .nav-item:hover { color: var(--text); background: rgba(94,234,212,.06); }
+    .nav-item.active { color: var(--accent); background: rgba(94,234,212,.1); border-left-color: var(--accent); }
+    .nav-item .icon { font-size: 1.1rem; width: 20px; text-align: center; }
+    .sidebar-footer { border-top: 1px solid var(--border); padding: 14px 20px; }
+    .sidebar-footer a { display: flex; align-items: center; gap: 10px; color: var(--danger); text-decoration: none; font-size: .85rem; font-weight: 500; opacity: .8; transition: opacity .15s; }
+    .sidebar-footer a:hover { opacity: 1; }
+
+    /* ─── Top bar ───────────────────────────────────────────── */
+    .topbar { height: 60px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 28px; gap: 16px; flex-shrink: 0; }
+    .topbar-title { font-size: 1rem; font-weight: 600; flex: 1; }
+    .topbar-badge { background: rgba(224,127,160,.15); color: var(--accent2); font-size: .7rem; font-weight: 600; padding: 3px 10px; border-radius: 99px; border: 1px solid rgba(224,127,160,.3); text-transform: uppercase; letter-spacing: 1px; }
+    .topbar-user { display: flex; align-items: center; gap: 8px; font-size: .8rem; color: var(--muted); }
+    .topbar-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: .8rem; font-weight: 700; color: #0f1117; }
+
+    /* ═══ FLASH ══════════════════════════════════════════════ */
+    .flash { display: flex; align-items: flex-start; gap: 10px; padding: 12px 18px; border-radius: var(--radius); margin-bottom: 20px; font-size: .875rem; font-weight: 500; animation: slideDown .25s ease; line-height: 1.5; }
+    @keyframes slideDown { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:none} }
+    .flash.success { background: rgba(74,222,128,.12); border: 1px solid rgba(74,222,128,.3); color: var(--success); }
+    .flash.error   { background: rgba(248,113,113,.12); border: 1px solid rgba(248,113,113,.3); color: var(--danger); }
+
+    /* ═══ PAGE HEADER ════════════════════════════════════════ */
+    .page-header { margin-bottom: 24px; }
+    .page-header h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -.4px; }
+    .page-header p  { color: var(--muted); font-size: .875rem; margin-top: 4px; }
+
+    /* ═══ STAT CARDS ════════════════════════════════════════ */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; margin-bottom: 24px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; transition: border-color .2s; }
+    .stat-card:hover { border-color: var(--accent); }
+    .stat-label { font-size: .65rem; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); font-weight: 600; }
+    .stat-val   { font-size: 2rem; font-weight: 700; margin-top: 6px; font-family: var(--mono); color: var(--accent); }
+    .stat-sub   { font-size: .72rem; color: var(--muted); margin-top: 3px; }
+
+    /* ═══ CARD ══════════════════════════════════════════════ */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 24px; margin-bottom: 20px; }
+    .card-title { font-size: .95rem; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .card-title .icon { color: var(--accent); }
+
+    /* ═══ TOOLBAR ════════════════════════════════════════════ */
+    .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
+    .toolbar input[type=text], .toolbar select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 8px 14px; border-radius: 6px; font-size: .85rem; font-family: var(--font); outline: none; transition: border-color .15s; }
+    .toolbar input[type=text]:focus, .toolbar select:focus { border-color: var(--accent); }
+    .toolbar input[type=text] { min-width: 200px; }
+
+    /* ═══ BUTTONS ════════════════════════════════════════════ */
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; font-size: .84rem; font-weight: 600; font-family: var(--font); border: 1px solid transparent; cursor: pointer; text-decoration: none; transition: all .15s ease; white-space: nowrap; }
+    .btn-primary { background: var(--accent);  color: #0f1117; border-color: var(--accent); }
+    .btn-primary:hover { background: #4dd4be; }
+    .btn-danger  { background: rgba(248,113,113,.15); color: var(--danger); border-color: rgba(248,113,113,.3); }
+    .btn-danger:hover  { background: rgba(248,113,113,.25); }
+    .btn-ghost   { background: transparent; color: var(--muted); border-color: var(--border); }
+    .btn-ghost:hover   { color: var(--text); border-color: var(--muted); }
+    .btn-event   { background: rgba(167,139,250,.15); color: var(--event); border-color: rgba(167,139,250,.3); }
+    .btn-event:hover   { background: rgba(167,139,250,.25); }
+    .btn-sm { padding: 5px 10px; font-size: .78rem; }
+
+    /* ═══ TABLE ═════════════════════════════════════════════ */
+    .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+    thead tr { background: var(--surface2); }
+    thead th { padding: 11px 16px; text-align: left; font-size: .7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 600; white-space: nowrap; }
+    tbody tr { border-top: 1px solid var(--border); transition: background .1s; }
+    tbody tr:hover { background: rgba(94,234,212,.04); }
+    tbody td { padding: 11px 16px; color: var(--text); vertical-align: middle; }
+
+    /* ═══ BADGES ════════════════════════════════════════════ */
+    .role-badge { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; }
+    .role-Student        { background: rgba(94,234,212,.15);  color: var(--accent);  border: 1px solid rgba(94,234,212,.3); }
+    .role-Lab-Technician { background: rgba(251,191,36,.15);  color: var(--warn);    border: 1px solid rgba(251,191,36,.3); }
+    .role-Admin          { background: rgba(224,127,160,.15); color: var(--accent2); border: 1px solid rgba(224,127,160,.3); }
+    .event-badge { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: .7rem; font-weight: 700; background: rgba(167,139,250,.15); color: var(--event); border: 1px solid rgba(167,139,250,.3); }
+
+    /* ═══ FORM ══════════════════════════════════════════════ */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.full { grid-column: 1 / -1; }
+    label { font-size: .78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
+    .form-control { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 10px 14px; border-radius: 6px; font-size: .88rem; font-family: var(--font); outline: none; transition: border-color .15s; width: 100%; }
+    .form-control:focus { border-color: var(--accent); }
+    select.form-control option { background: var(--surface2); }
+    textarea.form-control { resize: vertical; min-height: 80px; }
+    .form-hint { font-size: .73rem; color: var(--muted); margin-top: 2px; }
+    .form-actions { display: flex; gap: 10px; margin-top: 20px; }
+
+    /* ═══ MODAL ═════════════════════════════════════════════ */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); backdrop-filter: blur(4px); z-index: 200; display: none; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 28px 30px; width: 100%; max-width: 540px; max-height: 92vh; overflow-y: auto; animation: modalIn .2s ease; }
+    @keyframes modalIn { from{opacity:0;transform:scale(.95)} to{opacity:1;transform:none} }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+    .modal-header h3 { font-size: 1.1rem; font-weight: 700; }
+    .modal-close { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 1.4rem; line-height: 1; transition: color .15s; }
+    .modal-close:hover { color: var(--text); }
+
+    /* ═══ PAGINATION ════════════════════════════════════════ */
+    .pagination { display: flex; gap: 6px; align-items: center; margin-top: 16px; flex-wrap: wrap; }
+    .pagination a, .pagination span { padding: 6px 12px; border-radius: 6px; font-size: .8rem; font-weight: 600; text-decoration: none; }
+    .pagination a { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); transition: all .15s; }
+    .pagination a:hover { color: var(--text); border-color: var(--muted); }
+    .pagination span { background: var(--accent); color: #0f1117; border: 1px solid var(--accent); }
+
+    /* ═══ SETTINGS ══════════════════════════════════════════ */
+    .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .settings-note { background: rgba(94,234,212,.08); border: 1px solid rgba(94,234,212,.2); border-radius: 8px; padding: 12px 16px; font-size: .8rem; color: var(--muted); margin-bottom: 20px; }
+
+    /* ═══ EVENT CARD ════════════════════════════════════════ */
+    .event-list { display: grid; gap: 14px; }
+    .event-item { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; display: flex; gap: 16px; align-items: flex-start; transition: border-color .15s; }
+    .event-item:hover { border-color: var(--event); }
+    .event-item-meta { flex: 1; min-width: 0; }
+    .event-item-name { font-weight: 700; font-size: .95rem; margin-bottom: 4px; }
+    .event-item-desc { font-size: .82rem; color: var(--muted); margin-bottom: 10px; white-space: pre-wrap; word-break: break-word; }
+    .event-item-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+    .event-tag { font-size: .72rem; padding: 2px 9px; border-radius: 99px; font-weight: 600; }
+    .event-tag-lab  { background: rgba(94,234,212,.1); color: var(--accent); border: 1px solid rgba(94,234,212,.25); }
+    .event-tag-date { background: rgba(167,139,250,.1); color: var(--event); border: 1px solid rgba(167,139,250,.25); }
+    .event-tag-time { background: rgba(251,191,36,.1); color: var(--warn); border: 1px solid rgba(251,191,36,.25); }
+    .event-actions  { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+
+    /* ═══ PLACEHOLDER ════════════════════════════════════════ */
+    .placeholder-section { background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius); padding: 48px 28px; text-align: center; color: var(--muted); }
+    .placeholder-section .ph-icon { font-size: 2.5rem; margin-bottom: 12px; opacity: .5; }
+    .placeholder-section h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: 8px; color: var(--text); }
+    .placeholder-section p  { font-size: .85rem; max-width: 380px; margin: 0 auto; }
+    .coming-badge { display: inline-block; margin-top: 14px; padding: 4px 14px; border-radius: 99px; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; background: rgba(251,191,36,.12); color: var(--warn); border: 1px solid rgba(251,191,36,.3); }
+
+    /* ═══ RESPONSIVE ════════════════════════════════════════ */
+    @media (max-width: 768px) {
+      .sidebar { width: 60px; }
+      .sidebar-logo h1, .sidebar-logo span, .nav-item span, .nav-section-label, .sidebar-footer a span { display: none; }
+      .nav-item { padding: 12px; justify-content: center; }
+      .content { padding: 16px 14px; }
+      .form-grid, .form-grid.three, .settings-grid { grid-template-columns: 1fr; }
+      .event-item { flex-direction: column; }
+      .event-actions { flex-direction: row; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════
+     MODALS — Users
+════════════════════════════════════════════════════════════ -->
+
+<!-- Create User -->
+<div class="modal-overlay" id="modal-create-user">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>➕ Create New User</h3>
+      <button class="modal-close" onclick="closeModal('modal-create-user')">&times;</button>
+    </div>
+    <form method="POST" action="?tab=users">
+      <input type="hidden" name="_action" value="create_user" />
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Username</label>
+          <input class="form-control" type="text" name="username" required placeholder="e.g. jdelacruz" />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input class="form-control" type="email" name="email" required placeholder="user@dlsu.edu.ph" />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input class="form-control" type="password" name="password" required minlength="8" />
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <select class="form-control" name="role">
+            <option value="Student">Student</option>
+            <option value="Lab Technician">Lab Technician</option>
+            <option value="Admin">Admin</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Create User</button>
+        <button type="button" class="btn btn-ghost" onclick="closeModal('modal-create-user')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit User -->
+<div class="modal-overlay" id="modal-edit-user">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>✏️ Edit User</h3>
+      <button class="modal-close" onclick="closeModal('modal-edit-user')">&times;</button>
+    </div>
+    <form method="POST" action="?tab=users">
+      <input type="hidden" name="_action" value="edit_user" />
+      <input type="hidden" name="user_id" id="edit-user-id" />
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Username</label>
+          <input class="form-control" type="text" name="username" id="edit-username" required />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input class="form-control" type="email" name="email" id="edit-email" required />
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <select class="form-control" name="role" id="edit-role">
+            <option value="Student">Student</option>
+            <option value="Lab Technician">Lab Technician</option>
+            <option value="Admin">Admin</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>New Password <span style="font-weight:400;text-transform:none;">(blank = keep)</span></label>
+          <input class="form-control" type="password" name="password" minlength="8" />
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <button type="button" class="btn btn-ghost" onclick="closeModal('modal-edit-user')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Delete User -->
+<div class="modal-overlay" id="modal-delete-user">
+  <div class="modal" style="max-width:400px;text-align:center;">
+    <div style="font-size:2.5rem;margin-bottom:12px;">⚠️</div>
+    <h3 style="margin-bottom:8px;font-size:1.1rem;">Delete this user?</h3>
+    <p style="color:var(--muted);font-size:.85rem;margin-bottom:22px;">
+      All their reservations will also be permanently removed. This cannot be undone.
+    </p>
+    <form method="POST" action="?tab=users">
+      <input type="hidden" name="_action" value="delete_user" />
+      <input type="hidden" name="user_id" id="delete-user-id" />
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        <button type="button" class="btn btn-ghost" onclick="closeModal('modal-delete-user')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     MODALS — Events
+════════════════════════════════════════════════════════════ -->
+
+<!-- Create Event -->
+<div class="modal-overlay" id="modal-create-event">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>📅 Schedule New Event</h3>
+      <button class="modal-close" onclick="closeModal('modal-create-event')">&times;</button>
+    </div>
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:18px;">
+      All seats in the selected lab will be blocked for the chosen time window.
+      Any existing Scheduled reservations that overlap will be automatically cancelled
+      and the description below will be shown to affected students as the reason.
+    </p>
+    <form method="POST" action="?tab=events">
+      <input type="hidden" name="_action" value="create_event" />
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Event Name</label>
+          <input class="form-control" type="text" name="name" required placeholder="e.g. Lab Maintenance" />
+        </div>
+        <div class="form-group">
+          <label>Laboratory</label>
+          <select class="form-control" name="lab_id" required>
+            <option value="">— Select lab —</option>
+            <?php foreach ($allLabs as $l): ?>
+              <option value="<?= e($l['_id']) ?>">
+                Lab <?= (int)$l['number'] ?> — <?= e($l['class']) ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Date</label>
+          <input class="form-control" type="date" name="date" required
+                 min="<?= date('Y-m-d') ?>" />
+        </div>
+        <div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label>Start Time</label>
+            <select class="form-control" name="time_start" required>
+              <?php foreach ($timeOptions as $t): ?>
+                <option value="<?= e($t) ?>"><?= e($t) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div>
+            <label>End Time</label>
+            <select class="form-control" name="time_end" required>
+              <?php foreach ($timeOptions as $t): ?>
+                <option value="<?= e($t) ?>"><?= e($t) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+        <div class="form-group full">
+          <label>Description (shown to students whose reservations are cancelled)</label>
+          <textarea class="form-control" name="description" rows="3"
+                    placeholder="e.g. Lab 2 is closed on April 1 from 8AM–10AM for scheduled electrical maintenance. We apologise for the inconvenience."></textarea>
+          <span class="form-hint">Leave blank to show only the event name as the reason.</span>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-event">📅 Schedule Event</button>
+        <button type="button" class="btn btn-ghost" onclick="closeModal('modal-create-event')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Event -->
+<div class="modal-overlay" id="modal-edit-event">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>✏️ Edit Event</h3>
+      <button class="modal-close" onclick="closeModal('modal-edit-event')">&times;</button>
+    </div>
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:18px;">
+      Saving will re-run conflict detection for the updated window and cancel any
+      newly conflicting reservations.
+    </p>
+    <form method="POST" action="?tab=events">
+      <input type="hidden" name="_action" value="edit_event" />
+      <input type="hidden" name="event_id" id="edit-event-id" />
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Event Name</label>
+          <input class="form-control" type="text" name="name" id="edit-event-name" required />
+        </div>
+        <div class="form-group">
+          <label>Laboratory</label>
+          <select class="form-control" name="lab_id" id="edit-event-lab" required>
+            <option value="">— Select lab —</option>
+            <?php foreach ($allLabs as $l): ?>
+              <option value="<?= e($l['_id']) ?>">
+                Lab <?= (int)$l['number'] ?> — <?= e($l['class']) ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Date</label>
+          <input class="form-control" type="date" name="date" id="edit-event-date" required />
+        </div>
+        <div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label>Start Time</label>
+            <select class="form-control" name="time_start" id="edit-event-start" required>
+              <?php foreach ($timeOptions as $t): ?>
+                <option value="<?= e($t) ?>"><?= e($t) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div>
+            <label>End Time</label>
+            <select class="form-control" name="time_end" id="edit-event-end" required>
+              <?php foreach ($timeOptions as $t): ?>
+                <option value="<?= e($t) ?>"><?= e($t) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+        <div class="form-group full">
+          <label>Description</label>
+          <textarea class="form-control" name="description" id="edit-event-desc" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-event">Save Event</button>
+        <button type="button" class="btn btn-ghost" onclick="closeModal('modal-edit-event')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Delete Event -->
+<div class="modal-overlay" id="modal-delete-event">
+  <div class="modal" style="max-width:420px;text-align:center;">
+    <div style="font-size:2.5rem;margin-bottom:12px;">⚠️</div>
+    <h3 style="margin-bottom:8px;font-size:1.1rem;">Delete this event?</h3>
+    <p style="color:var(--muted);font-size:.85rem;margin-bottom:22px;">
+      The event will be removed and the lab slots will open up again.
+      Reservations that were already cancelled by this event will <strong>remain cancelled</strong>.
+    </p>
+    <form method="POST" action="?tab=events">
+      <input type="hidden" name="_action" value="delete_event" />
+      <input type="hidden" name="event_id" id="delete-event-id" />
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        <button type="button" class="btn btn-ghost" onclick="closeModal('modal-delete-event')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     APP SHELL
+════════════════════════════════════════════════════════════ -->
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h1>EZLabs</h1>
+      <span>Admin Panel</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Dashboard</div>
+      <a href="?tab=overview" class="nav-item <?= $tab==='overview'?'active':'' ?>"><span class="icon">📊</span><span>Overview</span></a>
+      <div class="nav-section-label">Management</div>
+      <a href="?tab=users"    class="nav-item <?= $tab==='users'?'active':'' ?>"><span class="icon">👥</span><span>Users</span></a>
+      <a href="?tab=labs"     class="nav-item <?= $tab==='labs'?'active':'' ?>"><span class="icon">🖥️</span><span>Labs &amp; Slots</span></a>
+      <a href="?tab=events"   class="nav-item <?= $tab==='events'?'active':'' ?>"><span class="icon">📅</span><span>Events</span></a>
+      <div class="nav-section-label">System</div>
+      <a href="?tab=settings" class="nav-item <?= $tab==='settings'?'active':'' ?>"><span class="icon">⚙️</span><span>Settings</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="<?= e(app_url('/logout')) ?>"><span style="font-size:1rem;">🚪</span><span>Logout</span></a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="topbar-title">
+        <?php $titles=['overview'=>'Overview','users'=>'User Management','labs'=>'Labs & Slots','events'=>'Event Scheduler','settings'=>'System Settings'];
+              echo e($titles[$tab] ?? 'Admin'); ?>
+      </span>
+      <span class="topbar-badge">Admin</span>
+      <div class="topbar-user">
+        <div class="topbar-avatar"><?= strtoupper(substr($sessionName,0,1)) ?></div>
+        <span><?= e($sessionName) ?></span>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <?php if ($flash): ?>
+        <div class="flash <?= e($flash['type']) ?>">
+          <?= $flash['type']==='success' ? '✅' : '❌' ?>
+          <span><?= e($flash['msg']) ?></span>
+        </div>
+      <?php endif; ?>
+
+
+      <!-- ═══ OVERVIEW ════════════════════════════════════════ -->
+      <?php if ($tab === 'overview'): ?>
+        <div class="page-header">
+          <h2>System Overview</h2>
+          <p>Live snapshot of EZLabs activity</p>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-label">Students</div><div class="stat-val"><?= $statStudents ?></div><div class="stat-sub">Registered accounts</div></div>
+          <div class="stat-card"><div class="stat-label">Lab Technicians</div><div class="stat-val"><?= $statTechs ?></div><div class="stat-sub">Active staff</div></div>
+          <div class="stat-card"><div class="stat-label">Administrators</div><div class="stat-val"><?= $statAdmins ?></div><div class="stat-sub">Admin accounts</div></div>
+          <div class="stat-card"><div class="stat-label">Laboratories</div><div class="stat-val"><?= $statLabs ?></div><div class="stat-sub">Registered rooms</div></div>
+          <div class="stat-card"><div class="stat-label">Scheduled Reservations</div><div class="stat-val" style="color:var(--accent2)"><?= $statRes ?></div><div class="stat-sub">Upcoming bookings</div></div>
+          <div class="stat-card"><div class="stat-label">Upcoming Events</div><div class="stat-val" style="color:var(--event)"><?= $statEvents ?></div><div class="stat-sub">Scheduled blockouts</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="icon">⚡</span> Quick Actions</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="openModal('modal-create-user')">➕ Add User</button>
+            <button class="btn btn-event"   onclick="openModal('modal-create-event')">📅 Schedule Event</button>
+            <a class="btn btn-ghost" href="?tab=users">👥 Manage Users</a>
+            <a class="btn btn-ghost" href="?tab=events">📅 All Events</a>
+            <a class="btn btn-ghost" href="?tab=settings">⚙️ Settings</a>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="icon">🕒</span> Recent Users</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Username</th><th>Email</th><th>Role</th><th>Created</th></tr></thead>
+              <tbody>
+                <?php
+                  $recent = array_slice(array_reverse($allUsers), 0, 6);
+                  foreach ($recent as $u):
+                    $rc = 'role-' . str_replace(' ','-', $u['role']);
+                ?>
+                <tr>
+                  <td style="font-weight:600;"><?= e($u['username']) ?></td>
+                  <td style="color:var(--muted);"><?= e($u['email']) ?></td>
+                  <td><span class="role-badge <?= e($rc) ?>"><?= e($u['role']) ?></span></td>
+                  <td style="color:var(--muted);font-size:.78rem;"><?= e(substr($u['createdAt'],0,10)) ?></td>
+                </tr>
+                <?php endforeach; ?>
+                <?php if (empty($recent)): ?><tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted);">No users yet.</td></tr><?php endif; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+
+      <!-- ═══ USERS ════════════════════════════════════════════ -->
+      <?php elseif ($tab === 'users'): ?>
+        <div class="page-header">
+          <h2>User Management</h2>
+          <p>Create, edit, and remove system accounts. Assign roles.</p>
+        </div>
+        <form method="GET" action="">
+          <input type="hidden" name="tab" value="users" />
+          <div class="toolbar">
+            <input type="text" name="q" placeholder="Search username or email…" value="<?= e($search) ?>" />
+            <select name="role_filter">
+              <option value="">All Roles</option>
+              <option value="Student"        <?= $roleFilter==='Student'?'selected':'' ?>>Student</option>
+              <option value="Lab Technician" <?= $roleFilter==='Lab Technician'?'selected':'' ?>>Lab Technician</option>
+              <option value="Admin"          <?= $roleFilter==='Admin'?'selected':'' ?>>Admin</option>
+            </select>
+            <button type="submit" class="btn btn-ghost">🔍 Filter</button>
+            <?php if ($search||$roleFilter): ?><a href="?tab=users" class="btn btn-ghost">✕ Clear</a><?php endif; ?>
+            <button type="button" class="btn btn-primary" onclick="openModal('modal-create-user')" style="margin-left:auto;">➕ Add User</button>
+          </div>
+        </form>
+        <div class="card" style="padding:0;">
+          <div class="table-wrap" style="border:none;">
+            <table>
+              <thead><tr><th>#</th><th>Username</th><th>Email</th><th>Role</th><th>Created</th><th style="text-align:right;">Actions</th></tr></thead>
+              <tbody>
+                <?php if (empty($users)): ?>
+                  <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted);">No users found.</td></tr>
+                <?php else: ?>
+                  <?php foreach ($users as $i => $u):
+                    $rc = 'role-' . str_replace(' ','-', $u['role']);
+                    $rowNum = ($page-1)*$perPage + $i + 1;
+                  ?>
+                  <tr>
+                    <td style="color:var(--muted);font-size:.78rem;font-family:var(--mono);"><?= $rowNum ?></td>
+                    <td style="font-weight:600;"><?= e($u['username']) ?></td>
+                    <td style="color:var(--muted);"><?= e($u['email']) ?></td>
+                    <td><span class="role-badge <?= e($rc) ?>"><?= e($u['role']) ?></span></td>
+                    <td style="color:var(--muted);font-size:.78rem;"><?= e(substr($u['createdAt'],0,10)) ?></td>
+                    <td style="text-align:right;">
+                      <div style="display:flex;gap:6px;justify-content:flex-end;">
+                        <button class="btn btn-ghost btn-sm" onclick="openEditUserModal(
+                          '<?= e(addslashes($u['_id'])) ?>',
+                          '<?= e(addslashes($u['username'])) ?>',
+                          '<?= e(addslashes($u['email'])) ?>',
+                          '<?= e(addslashes($u['role'])) ?>'
+                        )">Edit</button>
+                        <?php if ($u['_id'] !== $sessionId): ?>
+                          <button class="btn btn-danger btn-sm" onclick="openDeleteUserModal('<?= e($u['_id']) ?>')">Delete</button>
+                        <?php else: ?>
+                          <button class="btn btn-danger btn-sm" disabled style="opacity:.4;" title="Cannot delete yourself">Delete</button>
+                        <?php endif; ?>
+                      </div>
+                    </td>
+                  </tr>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <?php if ($totalPages > 1): ?>
+          <div class="pagination">
+            <?php for ($pg=1; $pg<=$totalPages; $pg++): ?>
+              <?php $pUrl='?tab=users&p='.$pg.'&q='.urlencode($search).'&role_filter='.urlencode($roleFilter); ?>
+              <?php if ($pg===$page): ?><span><?= $pg ?></span><?php else: ?><a href="<?= $pUrl ?>"><?= $pg ?></a><?php endif; ?>
+            <?php endfor; ?>
+          </div>
+        <?php endif; ?>
+        <p style="color:var(--muted);font-size:.78rem;margin-top:10px;">
+          Showing <?= count($users) ?> of <?= $totalUsers ?> user<?= $totalUsers!==1?'s':'' ?>
+        </p>
+
+
+      <!-- ═══ LABS (placeholder) ═══════════════════════════════ -->
+      <?php elseif ($tab === 'labs'): ?>
+        <div class="page-header"><h2>Labs &amp; Slots</h2><p>Create, configure, and manage computer laboratories and their seat/slot definitions.</p></div>
+        <div class="placeholder-section">
+          <div class="ph-icon">🖥️</div>
+          <h3>Labs &amp; Slot Management</h3>
+          <p>CRUD for laboratories, seat grid configuration, per-class time slot definitions, and lab status controls (Open / Occupied / Closed) will be implemented here.</p>
+          <span class="coming-badge">🚧 Coming Soon</span>
+        </div>
+
+
+      <!-- ═══ EVENTS (fully functional) ═══════════════════════ -->
+      <?php elseif ($tab === 'events'): ?>
+        <div class="page-header">
+          <h2>Event Scheduler</h2>
+          <p>
+            Block lab availability for a defined window. All conflicting Scheduled reservations
+            are automatically cancelled — students will see your event description as the reason.
+          </p>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;margin-bottom:18px;">
+          <button class="btn btn-event" onclick="openModal('modal-create-event')">📅 Schedule New Event</button>
+        </div>
+
+        <?php if (empty($allEvents)): ?>
+          <div class="placeholder-section" style="border-style:solid;">
+            <div class="ph-icon">📅</div>
+            <h3>No events scheduled yet</h3>
+            <p>Use the button above to schedule a lab blackout event.</p>
+          </div>
+        <?php else: ?>
+          <div class="event-list">
+            <?php foreach ($allEvents as $ev):
+              $labLabel = $labById[(string)($ev['lab']??'')] ?? 'Unknown Lab';
+              $isPast   = $ev['date'] < date('Y-m-d');
+            ?>
+            <div class="event-item" style="<?= $isPast ? 'opacity:.55;' : '' ?>">
+              <div class="event-item-meta">
+                <div class="event-item-name">
+                  <?= e($ev['name']) ?>
+                  <?php if ($isPast): ?><span class="event-badge" style="font-size:.65rem;margin-left:6px;">Past</span><?php endif; ?>
+                </div>
+                <?php if ($ev['description'] !== ''): ?>
+                  <div class="event-item-desc"><?= e($ev['description']) ?></div>
+                <?php endif; ?>
+                <div class="event-item-tags">
+                  <span class="event-tag event-tag-lab"><?= e($labLabel) ?></span>
+                  <span class="event-tag event-tag-date">📅 <?= e($ev['date']) ?></span>
+                  <span class="event-tag event-tag-time">⏱ <?= e($ev['time_start']) ?> – <?= e($ev['time_end']) ?></span>
+                </div>
+              </div>
+              <div class="event-actions">
+                <?php if (!$isPast): ?>
+                  <button class="btn btn-ghost btn-sm" onclick="openEditEventModal(
+                    '<?= e(addslashes($ev['_id'])) ?>',
+                    '<?= e(addslashes($ev['lab'])) ?>',
+                    '<?= e(addslashes($ev['name'])) ?>',
+                    '<?= e(addslashes($ev['description'])) ?>',
+                    '<?= e(addslashes($ev['date'])) ?>',
+                    '<?= e(addslashes($ev['time_start'])) ?>',
+                    '<?= e(addslashes($ev['time_end'])) ?>'
+                  )">Edit</button>
+                <?php endif; ?>
+                <button class="btn btn-danger btn-sm" onclick="openDeleteEventModal('<?= e($ev['_id']) ?>')">Delete</button>
+              </div>
+            </div>
+            <?php endforeach; ?>
+          </div>
+        <?php endif; ?>
+
+        <div class="card" style="margin-top:24px;">
+          <div class="card-title"><span class="icon">💡</span> How event blocking works in dashboard.php</div>
+          <p style="font-size:.83rem;color:var(--muted);line-height:1.7;">
+            In your seat-grid rendering loop in <code style="background:var(--surface2);padding:1px 5px;border-radius:4px;">dashboard.php</code>,
+            call <code style="background:var(--surface2);padding:1px 5px;border-radius:4px;">slot_is_blocked_by_event($lab['_id'], $selectedDate, $slotStart, $slotEnd)</code>
+            per cell. If it returns <code style="background:var(--surface2);padding:1px 5px;border-radius:4px;">true</code>,
+            render the cell with <code style="background:var(--surface2);padding:1px 5px;border-radius:4px;">class="unavailable"</code> and set
+            <code style="background:var(--surface2);padding:1px 5px;border-radius:4px;">data-reason="<?php echo htmlspecialchars('<?= e(slot_block_reason(...)) ?>') ?>"</code>
+            for a tooltip. The function is defined in <code style="background:var(--surface2);padding:1px 5px;border-radius:4px;">repository.php</code>
+            and uses the same half-open interval overlap logic as <code style="background:var(--surface2);padding:1px 5px;border-radius:4px;">reservation_conflicts()</code>.
+          </p>
+        </div>
+
+
+      <!-- ═══ SETTINGS (fully functional) ════════════════════ -->
+      <?php elseif ($tab === 'settings'): ?>
+        <div class="page-header"><h2>System Settings</h2><p>Configure global behaviour rules for EZLabs.</p></div>
+        <div class="card">
+          <div class="card-title"><span class="icon">⚙️</span> Operational Rules</div>
+          <div class="settings-note">
+            ℹ️ These settings control reservation windows, grace periods, and seat limits.
+            Changes take effect immediately for all new reservations.
+          </div>
+          <form method="POST" action="?tab=settings">
+            <input type="hidden" name="_action" value="save_settings" />
+            <div class="settings-grid">
+              <div class="form-group">
+                <label>Site Name</label>
+                <input class="form-control" type="text" name="site_name" value="<?= e($settings['site_name']) ?>" required />
+                <span class="form-hint">Displayed in the browser tab and header.</span>
+              </div>
+              <div class="form-group">
+                <label>Max Seats per Lab</label>
+                <input class="form-control" type="number" name="max_seats" value="<?= (int)$settings['max_seats'] ?>" min="1" max="200" required />
+                <span class="form-hint">Default seat count when creating a new lab.</span>
+              </div>
+              <div class="form-group">
+                <label>Advance Booking Window (days)</label>
+                <input class="form-control" type="number" name="advance_days" value="<?= (int)$settings['advance_days'] ?>" min="1" max="30" required />
+                <span class="form-hint">Students can reserve up to this many days in advance.</span>
+              </div>
+              <div class="form-group">
+                <label>Cancellation Cutoff (minutes)</label>
+                <input class="form-control" type="number" name="cancel_minutes" value="<?= (int)$settings['cancel_minutes'] ?>" min="1" max="1440" required />
+                <span class="form-hint">Students can no longer cancel within this window before their slot.</span>
+              </div>
+              <div class="form-group">
+                <label>No-show Grace Period (minutes)</label>
+                <input class="form-control" type="number" name="grace_minutes" value="<?= (int)$settings['grace_minutes'] ?>" min="1" max="60" required />
+                <span class="form-hint">Lab technicians may cancel a reservation after this many minutes of no-show.</span>
+              </div>
+            </div>
+            <div class="form-actions" style="margin-top:24px;">
+              <button type="submit" class="btn btn-primary">💾 Save Settings</button>
+              <button type="reset"  class="btn btn-ghost">↩ Reset</button>
+            </div>
+          </form>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="icon">📋</span> Active Configuration</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Setting</th><th>Current Value</th></tr></thead>
+              <tbody>
+                <tr><td>Site Name</td>        <td style="font-family:var(--mono);color:var(--accent);"><?= e($settings['site_name']) ?></td></tr>
+                <tr><td>Max Seats per Lab</td><td style="font-family:var(--mono);color:var(--accent);"><?= (int)$settings['max_seats'] ?></td></tr>
+                <tr><td>Advance Booking</td>  <td style="font-family:var(--mono);color:var(--accent);"><?= (int)$settings['advance_days'] ?> days</td></tr>
+                <tr><td>Cancel Cutoff</td>    <td style="font-family:var(--mono);color:var(--accent);"><?= (int)$settings['cancel_minutes'] ?> minutes</td></tr>
+                <tr><td>No-show Grace</td>    <td style="font-family:var(--mono);color:var(--accent);"><?= (int)$settings['grace_minutes'] ?> minutes</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      <?php endif; ?>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+// ── Modal helpers ──────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(function(o) {
+  o.addEventListener('click', function(e) { if (e.target === o) o.classList.remove('open'); });
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(function(m) { m.classList.remove('open'); });
+});
+
+// ── User modals ────────────────────────────────────────────
+function openEditUserModal(id, username, email, role) {
+  document.getElementById('edit-user-id').value  = id;
+  document.getElementById('edit-username').value  = username;
+  document.getElementById('edit-email').value     = email;
+  document.getElementById('edit-role').value      = role;
+  openModal('modal-edit-user');
+}
+function openDeleteUserModal(id) {
+  document.getElementById('delete-user-id').value = id;
+  openModal('modal-delete-user');
+}
+
+// ── Event modals ───────────────────────────────────────────
+function openEditEventModal(id, labId, name, desc, date, tStart, tEnd) {
+  document.getElementById('edit-event-id').value    = id;
+  document.getElementById('edit-event-name').value  = name;
+  document.getElementById('edit-event-desc').value  = desc;
+  document.getElementById('edit-event-date').value  = date;
+
+  // Select the matching lab option
+  var labSel = document.getElementById('edit-event-lab');
+  for (var i = 0; i < labSel.options.length; i++) {
+    if (labSel.options[i].value === labId) { labSel.selectedIndex = i; break; }
+  }
+  // Select time options
+  function setSelect(selId, val) {
+    var s = document.getElementById(selId);
+    for (var i = 0; i < s.options.length; i++) {
+      if (s.options[i].value === val) { s.selectedIndex = i; break; }
+    }
+  }
+  setSelect('edit-event-start', tStart);
+  setSelect('edit-event-end',   tEnd);
+  openModal('modal-edit-event');
+}
+function openDeleteEventModal(id) {
+  document.getElementById('delete-event-id').value = id;
+  openModal('modal-delete-event');
+}
+
+// ── Flash auto-dismiss ─────────────────────────────────────
+(function() {
+  var f = document.querySelector('.flash');
+  if (!f) return;
+  setTimeout(function() {
+    f.style.transition = 'opacity .4s';
+    f.style.opacity = '0';
+    setTimeout(function() { f.remove(); }, 400);
+  }, 6000);
+})();
+</script>
+</body>
+</html>
