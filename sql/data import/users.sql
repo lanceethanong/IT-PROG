@@ -27,18 +27,6 @@ SET time_zone = "+00:00";
 -- Table structure for table `users`
 --
 
-CREATE TABLE `users` (
-  `id` varchar(24) NOT NULL,
-  `email` varchar(191) NOT NULL,
-  `username` varchar(191) NOT NULL,
-  `description` text DEFAULT NULL,
-  `remember` tinyint(1) NOT NULL DEFAULT 0,
-  `password` varchar(255) NOT NULL,
-  `picture` varchar(255) NOT NULL DEFAULT 'picture.jpg',
-  `role` enum('Student','Lab Technician','Admin') NOT NULL,
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `users`
