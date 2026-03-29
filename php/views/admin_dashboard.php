@@ -9,7 +9,7 @@
 require_once __DIR__ . '/../lib/repository.php';
 
 // ── Auth guard ────────────────────────────────────────────────
-require_role('Admin'); //comment out lang if you want to test admin dashboard without logging in
+require_role('Admin');
 $sessionUser = $_SESSION['user'] ?? [];
 $sessionName = (string) ($sessionUser['username'] ?? '');
 $sessionId   = (string) ($sessionUser['_id']      ?? '');
@@ -449,7 +449,7 @@ for ($h = 7; $h <= 22; $h++) {
 <div class="modal-overlay" id="modal-create-user">
   <div class="modal">
     <div class="modal-header">
-      <h3>➕ Create New User</h3>
+      <h3>Create New User</h3>
       <button class="modal-close" onclick="closeModal('modal-create-user')">&times;</button>
     </div>
     <form method="POST" action="?tab=users">
@@ -488,7 +488,7 @@ for ($h = 7; $h <= 22; $h++) {
 <div class="modal-overlay" id="modal-edit-user">
   <div class="modal">
     <div class="modal-header">
-      <h3>✏️ Edit User</h3>
+      <h3 style="display:flex;align-items:center;gap:8px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit User</h3>
       <button class="modal-close" onclick="closeModal('modal-edit-user')">&times;</button>
     </div>
     <form method="POST" action="?tab=users">
@@ -527,7 +527,7 @@ for ($h = 7; $h <= 22; $h++) {
 <!-- Delete User -->
 <div class="modal-overlay" id="modal-delete-user">
   <div class="modal" style="max-width:400px;text-align:center;">
-    <div style="font-size:2.5rem;margin-bottom:12px;">⚠️</div>
+    <div style="display:flex;justify-content:center;margin-bottom:12px;"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
     <h3 style="margin-bottom:8px;font-size:1.1rem;">Delete this user?</h3>
     <p style="color:var(--muted);font-size:.85rem;margin-bottom:22px;">
       All their reservations will also be permanently removed. This cannot be undone.
@@ -551,7 +551,7 @@ for ($h = 7; $h <= 22; $h++) {
 <div class="modal-overlay" id="modal-create-event">
   <div class="modal">
     <div class="modal-header">
-      <h3>📅 Schedule New Event</h3>
+      <h3>Schedule New Event</h3>
       <button class="modal-close" onclick="closeModal('modal-create-event')">&times;</button>
     </div>
     <p style="font-size:.82rem;color:var(--muted);margin-bottom:18px;">
@@ -608,7 +608,7 @@ for ($h = 7; $h <= 22; $h++) {
         </div>
       </div>
       <div class="form-actions">
-        <button type="submit" class="btn btn-event">📅 Schedule Event</button>
+        <button type="submit" class="btn btn-event">Schedule Event</button>
         <button type="button" class="btn btn-ghost" onclick="closeModal('modal-create-event')">Cancel</button>
       </div>
     </form>
@@ -619,7 +619,7 @@ for ($h = 7; $h <= 22; $h++) {
 <div class="modal-overlay" id="modal-edit-event">
   <div class="modal">
     <div class="modal-header">
-      <h3>✏️ Edit Event</h3>
+      <h3 style="display:flex;align-items:center;gap:8px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit Event</h3>
       <button class="modal-close" onclick="closeModal('modal-edit-event')">&times;</button>
     </div>
     <p style="font-size:.82rem;color:var(--muted);margin-bottom:18px;">
@@ -683,7 +683,7 @@ for ($h = 7; $h <= 22; $h++) {
 <!-- Delete Event -->
 <div class="modal-overlay" id="modal-delete-event">
   <div class="modal" style="max-width:420px;text-align:center;">
-    <div style="font-size:2.5rem;margin-bottom:12px;">⚠️</div>
+    <div style="display:flex;justify-content:center;margin-bottom:12px;"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
     <h3 style="margin-bottom:8px;font-size:1.1rem;">Delete this event?</h3>
     <p style="color:var(--muted);font-size:.85rem;margin-bottom:22px;">
       The event will be removed and the lab slots will open up again.
@@ -713,16 +713,16 @@ for ($h = 7; $h <= 22; $h++) {
     </div>
     <nav class="sidebar-nav">
       <div class="nav-section-label">Dashboard</div>
-      <a href="?tab=overview" class="nav-item <?= $tab==='overview'?'active':'' ?>"><span class="icon">📊</span><span>Overview</span></a>
+      <a href="?tab=overview" class="nav-item <?= $tab==='overview'?'active':'' ?>"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span><span>Overview</span></a>
       <div class="nav-section-label">Management</div>
-      <a href="?tab=users"    class="nav-item <?= $tab==='users'?'active':'' ?>"><span class="icon">👥</span><span>Users</span></a>
-      <a href="?tab=labs"     class="nav-item <?= $tab==='labs'?'active':'' ?>"><span class="icon">🖥️</span><span>Labs &amp; Slots</span></a>
-      <a href="?tab=events"   class="nav-item <?= $tab==='events'?'active':'' ?>"><span class="icon">📅</span><span>Events</span></a>
+      <a href="?tab=users"    class="nav-item <?= $tab==='users'?'active':'' ?>"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span>Users</span></a>
+      <a href="?tab=labs"     class="nav-item <?= $tab==='labs'?'active':'' ?>"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg></span><span>Labs &amp; Slots</span></a>
+      <a href="?tab=events"   class="nav-item <?= $tab==='events'?'active':'' ?>"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span>Events</span></a>
       <div class="nav-section-label">System</div>
-      <a href="?tab=settings" class="nav-item <?= $tab==='settings'?'active':'' ?>"><span class="icon">⚙️</span><span>Settings</span></a>
+      <a href="?tab=settings" class="nav-item <?= $tab==='settings'?'active':'' ?>"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span>Settings</span></a>
     </nav>
     <div class="sidebar-footer">
-      <a href="<?= e(app_url('/logout')) ?>"><span style="font-size:1rem;">🚪</span><span>Logout</span></a>
+      <a href="<?= e(app_url('/logout')) ?>"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span>Logout</span></a>
     </div>
   </aside>
 
@@ -743,7 +743,10 @@ for ($h = 7; $h <= 22; $h++) {
 
       <?php if ($flash): ?>
         <div class="flash <?= e($flash['type']) ?>">
-          <?= $flash['type']==='success' ? '✅' : '❌' ?>
+          <?= $flash['type']==='success'
+            ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>'
+            : '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+          ?>
           <span><?= e($flash['msg']) ?></span>
         </div>
       <?php endif; ?>
@@ -764,17 +767,17 @@ for ($h = 7; $h <= 22; $h++) {
           <div class="stat-card"><div class="stat-label">Upcoming Events</div><div class="stat-val" style="color:var(--event)"><?= $statEvents ?></div><div class="stat-sub">Scheduled blockouts</div></div>
         </div>
         <div class="card">
-          <div class="card-title"><span class="icon">⚡</span> Quick Actions</div>
+          <div class="card-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span> Quick Actions</div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;">
-            <button class="btn btn-primary" onclick="openModal('modal-create-user')">➕ Add User</button>
-            <button class="btn btn-event"   onclick="openModal('modal-create-event')">📅 Schedule Event</button>
-            <a class="btn btn-ghost" href="?tab=users">👥 Manage Users</a>
-            <a class="btn btn-ghost" href="?tab=events">📅 All Events</a>
-            <a class="btn btn-ghost" href="?tab=settings">⚙️ Settings</a>
+            <button class="btn btn-primary" onclick="openModal('modal-create-user')">Add User</button>
+            <button class="btn btn-event"   onclick="openModal('modal-create-event')">Schedule Event</button>
+            <a class="btn btn-ghost" href="?tab=users">Manage Users</a>
+            <a class="btn btn-ghost" href="?tab=events">All Events</a>
+            <a class="btn btn-ghost" href="?tab=settings">Settings</a>
           </div>
         </div>
         <div class="card">
-          <div class="card-title"><span class="icon">🕒</span> Recent Users</div>
+          <div class="card-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> Recent Users</div>
           <div class="table-wrap">
             <table>
               <thead><tr><th>Username</th><th>Email</th><th>Role</th><th>Created</th></tr></thead>
@@ -814,9 +817,9 @@ for ($h = 7; $h <= 22; $h++) {
               <option value="Lab Technician" <?= $roleFilter==='Lab Technician'?'selected':'' ?>>Lab Technician</option>
               <option value="Admin"          <?= $roleFilter==='Admin'?'selected':'' ?>>Admin</option>
             </select>
-            <button type="submit" class="btn btn-ghost">🔍 Filter</button>
-            <?php if ($search||$roleFilter): ?><a href="?tab=users" class="btn btn-ghost">✕ Clear</a><?php endif; ?>
-            <button type="button" class="btn btn-primary" onclick="openModal('modal-create-user')" style="margin-left:auto;">➕ Add User</button>
+            <button type="submit" class="btn btn-ghost">Filter</button>
+            <?php if ($search||$roleFilter): ?><a href="?tab=users" class="btn btn-ghost">&times; Clear</a><?php endif; ?>
+            <button type="button" class="btn btn-primary" onclick="openModal('modal-create-user')" style="margin-left:auto;">Add User</button>
           </div>
         </form>
         <div class="card" style="padding:0;">
@@ -876,10 +879,10 @@ for ($h = 7; $h <= 22; $h++) {
       <?php elseif ($tab === 'labs'): ?>
         <div class="page-header"><h2>Labs &amp; Slots</h2><p>Create, configure, and manage computer laboratories and their seat/slot definitions.</p></div>
         <div class="placeholder-section">
-          <div class="ph-icon">🖥️</div>
+          <div class="ph-icon"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg></div>
           <h3>Labs &amp; Slot Management</h3>
           <p>CRUD for laboratories, seat grid configuration, per-class time slot definitions, and lab status controls (Open / Occupied / Closed) will be implemented here.</p>
-          <span class="coming-badge">🚧 Coming Soon</span>
+          <span class="coming-badge">Coming Soon</span>
         </div>
 
 
@@ -894,12 +897,12 @@ for ($h = 7; $h <= 22; $h++) {
         </div>
 
         <div style="display:flex;justify-content:flex-end;margin-bottom:18px;">
-          <button class="btn btn-event" onclick="openModal('modal-create-event')">📅 Schedule New Event</button>
+          <button class="btn btn-event" onclick="openModal('modal-create-event')">Schedule New Event</button>
         </div>
 
         <?php if (empty($allEvents)): ?>
           <div class="placeholder-section" style="border-style:solid;">
-            <div class="ph-icon">📅</div>
+            <div class="ph-icon"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
             <h3>No events scheduled yet</h3>
             <p>Use the button above to schedule a lab blackout event.</p>
           </div>
@@ -920,8 +923,8 @@ for ($h = 7; $h <= 22; $h++) {
                 <?php endif; ?>
                 <div class="event-item-tags">
                   <span class="event-tag event-tag-lab"><?= e($labLabel) ?></span>
-                  <span class="event-tag event-tag-date">📅 <?= e($ev['date']) ?></span>
-                  <span class="event-tag event-tag-time">⏱ <?= e($ev['time_start']) ?> – <?= e($ev['time_end']) ?></span>
+                  <span class="event-tag event-tag-date"><?= e($ev['date']) ?></span>
+                  <span class="event-tag event-tag-time"><?= e($ev['time_start']) ?> – <?= e($ev['time_end']) ?></span>
                 </div>
               </div>
               <div class="event-actions">
@@ -944,7 +947,7 @@ for ($h = 7; $h <= 22; $h++) {
         <?php endif; ?>
 
         <div class="card" style="margin-top:24px;">
-          <div class="card-title"><span class="icon">💡</span> How event blocking works in dashboard.php</div>
+          <div class="card-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg></span> How event blocking works in dashboard.php</div>
           <p style="font-size:.83rem;color:var(--muted);line-height:1.7;">
             In your seat-grid rendering loop in <code style="background:var(--surface2);padding:1px 5px;border-radius:4px;">dashboard.php</code>,
             call <code style="background:var(--surface2);padding:1px 5px;border-radius:4px;">slot_is_blocked_by_event($lab['_id'], $selectedDate, $slotStart, $slotEnd)</code>
@@ -961,10 +964,11 @@ for ($h = 7; $h <= 22; $h++) {
       <?php elseif ($tab === 'settings'): ?>
         <div class="page-header"><h2>System Settings</h2><p>Configure global behaviour rules for EZLabs.</p></div>
         <div class="card">
-          <div class="card-title"><span class="icon">⚙️</span> Operational Rules</div>
-          <div class="settings-note">
-            ℹ️ These settings control reservation windows, grace periods, and seat limits.
-            Changes take effect immediately for all new reservations.
+          <div class="card-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> Operational Rules</div>
+          <div class="settings-note" style="display:flex;align-items:flex-start;gap:8px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span>These settings control reservation windows, grace periods, and seat limits.
+            Changes take effect immediately for all new reservations.</span>
           </div>
           <form method="POST" action="?tab=settings">
             <input type="hidden" name="_action" value="save_settings" />
@@ -996,13 +1000,13 @@ for ($h = 7; $h <= 22; $h++) {
               </div>
             </div>
             <div class="form-actions" style="margin-top:24px;">
-              <button type="submit" class="btn btn-primary">💾 Save Settings</button>
-              <button type="reset"  class="btn btn-ghost">↩ Reset</button>
+              <button type="submit" class="btn btn-primary">Save Settings</button>
+              <button type="reset"  class="btn btn-ghost">Reset</button>
             </div>
           </form>
         </div>
         <div class="card">
-          <div class="card-title"><span class="icon">📋</span> Active Configuration</div>
+          <div class="card-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></span> Active Configuration</div>
           <div class="table-wrap">
             <table>
               <thead><tr><th>Setting</th><th>Current Value</th></tr></thead>
