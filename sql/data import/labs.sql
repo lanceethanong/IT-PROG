@@ -27,13 +27,7 @@ SET time_zone = "+00:00";
 -- Table structure for table `labs`
 --
 
-CREATE TABLE `labs` (
-  `id` varchar(24) NOT NULL,
-  `class_name` varchar(191) NOT NULL,
-  `number` int(11) NOT NULL,
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 --
 -- Dumping data for table `labs`
