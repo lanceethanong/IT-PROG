@@ -27,15 +27,6 @@ SET time_zone = "+00:00";
 -- Table structure for table `seat_lists`
 --
 
-CREATE TABLE `seat_lists` (
-  `id` varchar(24) NOT NULL,
-  `reservation_id` varchar(24) NOT NULL,
-  `row_num` int(11) NOT NULL,
-  `col_num` int(11) NOT NULL,
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 --
 -- Dumping data for table `seat_lists`
 --
