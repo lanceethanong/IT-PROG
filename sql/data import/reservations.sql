@@ -27,18 +27,6 @@ SET time_zone = "+00:00";
 -- Table structure for table `reservations`
 --
 
-CREATE TABLE `reservations` (
-  `id` varchar(24) NOT NULL,
-  `time_start` varchar(20) NOT NULL,
-  `time_end` varchar(20) NOT NULL,
-  `user_id` varchar(24) NOT NULL,
-  `lab_id` varchar(24) NOT NULL,
-  `date` date NOT NULL,
-  `anonymity` tinyint(1) NOT NULL DEFAULT 0,
-  `status` enum('Scheduled','Cancelled','In Progress','Completed') NOT NULL DEFAULT 'Scheduled',
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `reservations`
