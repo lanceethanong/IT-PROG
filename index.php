@@ -203,7 +203,10 @@ function build_dashboard_view_data(string $needRole, array $ctx, ?int $forcedLab
         $isPast = $cellDate < $today;
         $isBeyond = $cellDate > $maxDate;
         $isSelected = $ymd === $selectedDate;
-        $isSelectable = $isCurrentMonth && !$isPast && !$isBeyond;
+
+        // Allow selecting dates within the allowed range even if they fall in
+        // a different month (fixes inability to reserve across month boundary).
+        $isSelectable = !$isPast && !$isBeyond;
 
         $calendarDays[] = [
             'weekday' => $cellDate->format('D'),
@@ -392,7 +395,10 @@ if ($method === 'GET' && $path === '/') {
 
 if ($method === 'GET' && $path === '/login') {
     bypass_login_if_session_exists();
-    render_view('login', ['loginError' => $_GET['error'] ?? null]);
+    render_view('login', [
+        'loginError' => $_GET['error'] ?? null,
+        'loginSuccess' => $_GET['success'] ?? null,
+    ]);
 }
 
 if ($method === 'POST' && $path === '/login') {
@@ -484,13 +490,10 @@ if ($method === 'POST' && $path === '/register') {
     ];
 
     users_upsert($newUser);
-    $_SESSION['user'] = [
-        'id' => $newUser['_id'],
-        'username' => $username,
-        'role' => 'Student',
-    ];
 
-    redirect_to('/dashboard/student?username=' . rawurlencode($username));
+    // Do not auto-login after registration. Redirect back to login
+    // with a success message so the user can sign in explicitly.
+    redirect_to('/login?success=' . rawurlencode('Account created. Please log in.'));
 }
 
 if ($method === 'GET' && $path === '/logout') {

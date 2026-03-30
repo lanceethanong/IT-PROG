@@ -13,6 +13,9 @@
       <?php if (!empty($loginError)): ?>
         <p style="color: red;"><?= e($loginError) ?></p>
       <?php endif; ?>
+      <?php if (!empty($loginSuccess)): ?>
+        <p style="color: green;"><?= e($loginSuccess) ?></p>
+      <?php endif; ?>
       <form action="/login" method="POST" id="login-form">
         <div class="form-group">
           <label for="email">DLSU Email</label><br />
