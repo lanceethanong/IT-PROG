@@ -400,8 +400,10 @@ if ($method === 'POST' && $path === '/login') {
     $password = (string) ($_POST['password'] ?? '');
     $remember = (string) ($_POST['remember'] ?? '') === 'on';
 
-    if (preg_match('/@dlsu\.edu\.ph\s*$/i', $email) !== 1) {
-        render_view('login', ['loginError' => 'Please use your DLSU email address.']);
+    
+
+    if (strlen($password) < 8) {
+        render_view('login', ['loginError' => 'Password must be at least 8 characters long.']);
     }
 
     $user = users_find_by_email($email);
@@ -454,9 +456,7 @@ if ($method === 'POST' && $path === '/register') {
         render_view('register', ['registerError' => 'Passwords do not match.']);
     }
 
-    if (preg_match('/@dlsu\.edu\.ph\s*$/i', $email) !== 1) {
-        render_view('register', ['registerError' => 'Please enter a DLSU email address.']);
-    }
+    
 
     if (users_find_by_email($email) !== null) {
         render_view('register', ['registerError' => 'Email already in use.']);
