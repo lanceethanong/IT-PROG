@@ -532,19 +532,20 @@ function labs_find_by_number(int $number): ?array
 
 function reservations_all(): array
 {
-    $rows = db()->query('SELECT id, time_start, time_end, user_id, lab_id, date, anonymity, status, created_at, updated_at FROM reservations')->fetchAll();
+    $rows = db()->query('SELECT id, time_start, time_end, user_id, lab_id, date, anonymity, status, cancel_reason, created_at, updated_at FROM reservations')->fetchAll();
     return array_map(static function (array $r): array {
         return [
-            '_id'        => (string) $r['id'],
-            'time_start' => (string) $r['time_start'],
-            'time_end'   => (string) $r['time_end'],
-            'user'       => (string) $r['user_id'],
-            'lab'        => (string) $r['lab_id'],
-            'date'       => (string) $r['date'],
-            'anonymity'  => (bool) ((int) ($r['anonymity'] ?? 0)),
-            'status'     => (string) ($r['status'] ?? 'Scheduled'),
-            'createdAt'  => dt_from_db($r['created_at'] ?? null),
-            'updatedAt'  => dt_from_db($r['updated_at'] ?? null),
+            '_id'          => (string) $r['id'],
+            'time_start'   => (string) $r['time_start'],
+            'time_end'     => (string) $r['time_end'],
+            'user'         => (string) $r['user_id'],
+            'lab'          => (string) $r['lab_id'],
+            'date'         => (string) $r['date'],
+            'anonymity'    => (bool) ((int) ($r['anonymity'] ?? 0)),
+            'status'       => (string) ($r['status'] ?? 'Scheduled'),
+            'cancel_reason' => (string) ($r['cancel_reason'] ?? ''),
+            'createdAt'    => dt_from_db($r['created_at'] ?? null),
+            'updatedAt'    => dt_from_db($r['updated_at'] ?? null),
         ];
     }, $rows);
 }
@@ -865,6 +866,24 @@ function reservation_conflicts(array $candidate, array $candidateSeats, ?string 
             if ((string) ($seat['reservation'] ?? '') === (string) ($reservation['_id'] ?? '')) {
                 $occupied[(int) $seat['row'] . '-' . (int) $seat['column']] = true;
             }
+        }
+    }
+
+    // Check for events that block the time
+    $events = events_all();
+    foreach ($events as $event) {
+        if ((string) ($event['lab'] ?? '') !== $labId) {
+            continue;
+        }
+        if ((string) ($event['date'] ?? '') !== $date) {
+            continue;
+        }
+        $es = parse_time_to_minutes((string) ($event['time_start'] ?? '12:00 AM'));
+        $ee = parse_time_to_minutes((string) ($event['time_end']   ?? '12:00 AM'));
+        $overlap = $es < $end && $ee > $start;
+        if ($overlap) {
+            // Event blocks all seats
+            return true;
         }
     }
 
