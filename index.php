@@ -51,6 +51,7 @@ function build_user_reservations(string $username): array
                 'date' => reservation_date_only($reservation),
                 'createdAt' => (string) ($reservation['createdAt'] ?? ''),
                 'status' => $status,
+                'cancel_reason' => (string) ($reservation['cancel_reason'] ?? ''),
                 'showDelete' => reservation_show_delete($reservation),
                 'canEdit' => reservation_can_edit_student($reservation),
                 'canDelete' => reservation_can_delete_student($reservation),
@@ -280,6 +281,30 @@ function build_dashboard_view_data(string $needRole, array $ctx, ?int $forcedLab
                 }
             }
         }
+
+        // Mark slots unavailable due to events
+        foreach (events_all() as $event) {
+            if ((string) ($event['lab'] ?? '') !== (string) ($selectedLab['_id'] ?? '')) {
+                continue;
+            }
+            if ((string) ($event['date'] ?? '') !== $selectedDate) {
+                continue;
+            }
+
+            $eventStartIdx = time_to_slot_index((string) ($event['time_start'] ?? '07:00 AM'));
+            $eventEndIdx = time_to_slot_index((string) ($event['time_end'] ?? '07:30 AM'));
+            for ($row = 1; $row <= 7; $row++) {
+                for ($column = 1; $column <= 5; $column++) {
+                    $seatKey = $row . '-' . $column;
+                    for ($slot = $eventStartIdx; $slot < $eventEndIdx && $slot < 24; $slot++) {
+                        if ($slot >= 0) {
+                            $slotStatus[$seatKey][$slot] = 'legend unavailable';
+                            $slotUnavailable[$seatKey . '-s' . $slot] = true;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     $now = new DateTime('now', new DateTimeZone('Asia/Manila'));
@@ -440,7 +465,7 @@ if ($method === 'POST' && $path === '/login') {
 
     $username = rawurlencode((string) $user['username']);
     if ((string) $user['role'] === 'Admin') {
-        redirect_to('/admin');
+        redirect_to('/admin_dashboard.php');
     }
     if ((string) $user['role'] === 'Lab Technician') {
         redirect_to('/dashboard/technician?username=' . $username);
@@ -594,6 +619,66 @@ if ($method === 'POST' && $path === '/admin/remove-labtech') {
     users_delete_by_username($username);
     $_SESSION['successMessage'] = 'Lab Technician removed successfully!';
     redirect_to('/admin/view-labtech');
+}
+
+if ($method === 'GET' && $path === '/admin/events') {
+    require_role('Admin');
+    $events = events_all();
+    $labs = labs_all();
+    $success = $_SESSION['successMessage'] ?? null;
+    unset($_SESSION['successMessage']);
+    render_view('admin', [
+        'title' => 'Manage Events',
+        'page' => 'events',
+        'events' => $events,
+        'labs' => $labs,
+        'adminName' => session_username(),
+        'successMessage' => $success,
+    ]);
+}
+
+if ($method === 'POST' && $path === '/admin/create-event') {
+    require_role('Admin');
+    $name = trim((string) ($_POST['name'] ?? ''));
+    $lab_id = trim((string) ($_POST['lab_id'] ?? ''));
+    $date = trim((string) ($_POST['date'] ?? ''));
+    $time_start = trim((string) ($_POST['time_start'] ?? ''));
+    $time_end = trim((string) ($_POST['time_end'] ?? ''));
+    $description = trim((string) ($_POST['description'] ?? ''));
+
+    if ($name && $lab_id && $date && $time_start && $time_end) {
+        $event = events_insert([
+            'lab' => $lab_id,
+            'name' => $name,
+            'description' => $description,
+            'date' => $date,
+            'time_start' => $time_start,
+            'time_end' => $time_end,
+            'created_by' => session_user_id(),
+        ]);
+        $cancelled = event_cancel_conflicting($event);
+        $_SESSION['successMessage'] = "Event created and $cancelled conflicting reservation(s) cancelled.";
+    } else {
+        $_SESSION['successMessage'] = 'All fields are required.';
+    }
+    redirect_to('/admin/events');
+}
+
+if ($method === 'POST' && $path === '/admin/delete-event') {
+    require_role('Admin');
+    $event_id = trim((string) ($_POST['event_id'] ?? ''));
+    if ($event_id && events_delete($event_id)) {
+        $_SESSION['successMessage'] = 'Event deleted successfully!';
+    } else {
+        $_SESSION['successMessage'] = 'Event not found.';
+    }
+    redirect_to('/admin/events');
+}
+
+if ($path === '/admin_dashboard.php') {
+    require_role('Admin');
+    include __DIR__ . '/php/views/admin_dashboard.php';
+    exit;
 }
 
 if ($method === 'GET' && ($path === '/dashboard/student' || $path === '/dashboard/technician')) {
@@ -1140,6 +1225,7 @@ if ($method === 'GET' && $path === '/dashboard/technician/reservation-list') {
                 'date' => reservation_date_only($reservation),
                 'createdAt' => (string) ($reservation['createdAt'] ?? ''),
                 'status' => $status,
+                'cancel_reason' => (string) ($reservation['cancel_reason'] ?? ''),
                 'showDelete' => reservation_show_delete($reservation),
                 'isPast' => in_array($status, ['Completed', 'Cancelled'], true),
                 'canEdit' => reservation_can_edit_technician($reservation),
