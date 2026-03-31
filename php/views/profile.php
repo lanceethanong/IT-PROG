@@ -55,6 +55,9 @@
                         <p><strong>Date:</strong> <?= e((string) ($r['date'] ?? '')) ?></p>
                         <p><strong>Time:</strong> <?= e((string) ($r['time_start'] ?? '')) ?> - <?= e((string) ($r['time_end'] ?? '')) ?></p>
                         <p><strong>Status:</strong> <span class="status <?= e(status_class((string) $r['status'])) ?>"><?= e((string) $r['status']) ?></span></p>
+                        <?php if ((string) $r['status'] === 'Cancelled' && !empty($r['cancel_reason'])): ?>
+                          <p><strong>Cancellation Reason:</strong> <?= e((string) $r['cancel_reason']) ?></p>
+                        <?php endif; ?>
                       </div>
                       <?php if (($r['status'] ?? '') !== 'Completed' && ($r['status'] ?? '') !== 'Cancelled'): ?>
                         <div class="actions">
@@ -94,6 +97,9 @@
                         <p><strong>Date:</strong> <?= e((string) ($r['date'] ?? '')) ?></p>
                         <p><strong>Time:</strong> <?= e((string) ($r['time_start'] ?? '')) ?> - <?= e((string) ($r['time_end'] ?? '')) ?></p>
                         <p><strong>Status:</strong> <span class="status <?= e(status_class((string) $r['status'])) ?>"><?= e((string) $r['status']) ?></span></p>
+                        <?php if ((string) $r['status'] === 'Cancelled' && !empty($r['cancel_reason'])): ?>
+                          <p><strong>Cancellation Reason:</strong> <?= e((string) $r['cancel_reason']) ?></p>
+                        <?php endif; ?>
                       </div>
                     </div>
                   <?php endforeach; ?>
