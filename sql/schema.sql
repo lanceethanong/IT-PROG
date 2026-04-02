@@ -55,3 +55,20 @@ CREATE TABLE IF NOT EXISTS error_log (
   timestamp DATETIME NULL,
   user VARCHAR(191) NULL
 ) ENGINE=InnoDB;
+
+CREATE TABLE `events` (
+  `id` varchar(24) NOT NULL,
+  `lab_id` varchar(24) NOT NULL,
+  `name` varchar(191) NOT NULL,
+  `description` text DEFAULT NULL,
+  `date` date NOT NULL,
+  `time_start` varchar(20) NOT NULL,
+  `time_end` varchar(20) NOT NULL,
+  `created_by` varchar(24) NOT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE `events`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_event_lab` (`lab_id`);
