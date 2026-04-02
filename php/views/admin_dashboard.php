@@ -610,6 +610,93 @@ for ($h = 7; $h <= 22; $h++) {
   </div>
 </div>
 
+<!-- ════════════════════════════════════════════════════
+     MODALS — Labs
+════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-create-lab">
+  <div class="modal">
+    <div class="modal-header"><h3>Add New Laboratory</h3><button class="modal-close" onclick="closeModal('modal-create-lab')">&times;</button></div>
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:18px;">
+      Labs have a fixed 7×5 seat grid (35 seats). Each seat can be reserved per 30-minute time slot from 7:00 AM to 7:00 PM.
+    </p>
+    <form method="POST" action="?tab=labs">
+      <input type="hidden" name="_action" value="create_lab" />
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Lab Number</label>
+          <input class="form-control" type="number" name="number" min="1" max="99" required placeholder="e.g. 6" />
+          <span class="form-hint">Must be unique across all labs.</span>
+        </div>
+        <div class="form-group">
+          <label>Class / Subject Code</label>
+          <input class="form-control" type="text" name="class_name" required placeholder="e.g. CCPROG3" maxlength="50" />
+          <span class="form-hint">Subject code associated with this lab.</span>
+        </div>
+      </div>
+      <div style="margin-top:16px;">
+        <label style="margin-bottom:8px;display:block;">Seat Grid Preview (7 rows × 5 columns)</label>
+        <div class="seat-grid-preview">
+          <?php for ($r = 1; $r <= 7; $r++): ?>
+            <div class="seat-row">
+              <?php for ($c = 1; $c <= 5; $c++): ?>
+                <div class="seat-cell"><?= (($r-1)*5)+$c ?></div>
+              <?php endfor; ?>
+            </div>
+          <?php endfor; ?>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-lab">Add Laboratory</button>
+        <button type="button" class="btn btn-ghost" onclick="closeModal('modal-create-lab')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+ 
+<div class="modal-overlay" id="modal-edit-lab">
+  <div class="modal">
+    <div class="modal-header"><h3>Edit Laboratory</h3><button class="modal-close" onclick="closeModal('modal-edit-lab')">&times;</button></div>
+    <form method="POST" action="?tab=labs">
+      <input type="hidden" name="_action" value="edit_lab" />
+      <input type="hidden" name="lab_id" id="edit-lab-id" />
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Lab Number</label>
+          <input class="form-control" type="number" name="number" id="edit-lab-number" min="1" max="99" required />
+          <span class="form-hint">Changing this may affect reservation display names.</span>
+        </div>
+        <div class="form-group">
+          <label>Class / Subject Code</label>
+          <input class="form-control" type="text" name="class_name" id="edit-lab-class" required maxlength="50" />
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <button type="button" class="btn btn-ghost" onclick="closeModal('modal-edit-lab')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+ 
+<div class="modal-overlay" id="modal-delete-lab">
+  <div class="modal" style="max-width:420px;text-align:center;">
+    <div style="display:flex;justify-content:center;margin-bottom:12px;">⚠️</div>
+    <h3 style="margin-bottom:8px;font-size:1.1rem;">Delete this laboratory?</h3>
+    <p style="color:var(--muted);font-size:.85rem;margin-bottom:4px;">
+      This will permanently delete <strong id="delete-lab-name" style="color:var(--text);"></strong>.
+    </p>
+    <p style="color:var(--danger);font-size:.82rem;margin-bottom:22px;">All reservations, seat assignments, and events for this lab will also be deleted.</p>
+    <form method="POST" action="?tab=labs">
+      <input type="hidden" name="_action" value="delete_lab" />
+      <input type="hidden" name="lab_id" id="delete-lab-id" />
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button type="submit" class="btn btn-danger">Yes, Delete Lab</button>
+        <button type="button" class="btn btn-ghost" onclick="closeModal('modal-delete-lab')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- ════════════════════════════════════════════════════════════
      MODALS — Events
 ════════════════════════════════════════════════════════════ -->
