@@ -214,3 +214,8 @@ function format_manila_date(string $date): string
     $dt->setTimezone(new DateTimeZone('Asia/Manila'));
     return $dt->format('Y-m-d');
 }
+
+function session_user_id(): string
+{
+    return (string) ($_SESSION['user']['id'] ?? '');
+}
