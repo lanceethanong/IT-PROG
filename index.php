@@ -13,6 +13,8 @@ function session_username(): string
     return (string) ($_SESSION['user']['username'] ?? '');
 }
 
+// session_user_id() is now defined in bootstrap.php
+
 function dashboard_context(string $fallbackRole): array
 {
     $username = request_query('username', session_username()) ?? '';
