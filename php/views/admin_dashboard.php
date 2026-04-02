@@ -99,6 +99,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect_to('/admin_dashboard.php?tab=users');
     }
 
+    // ── CREATE LAB ──────────────────────────────────────────
+    if ($action === 'create_lab') {
+        $className = trim($_POST['class_name'] ?? '');
+        $number    = (int) ($_POST['number'] ?? 0);
+ 
+        if ($className && $number > 0) {
+            if (labs_find_by_number($number) !== null) {
+                $_SESSION['admin_flash'] = ['type'=>'error','msg'=>"Lab number {$number} already exists."];
+            } else {
+                labs_insert([
+                    '_id'       => new_id(),
+                    'class'     => $className,
+                    'number'    => $number,
+                    'createdAt' => now_iso(),
+                    'updatedAt' => now_iso(),
+                ]);
+                $_SESSION['admin_flash'] = ['type'=>'success','msg'=>"Lab {$number} ({$className}) created."];
+            }
+        } else {
+            $_SESSION['admin_flash'] = ['type'=>'error','msg'=>'Lab number and class name are required.'];
+        }
+        redirect_to('/admin_dashboard.php?tab=labs');
+    }
+ 
+    // ── EDIT LAB ────────────────────────────────────────────
+    if ($action === 'edit_lab') {
+        $labId     = trim($_POST['lab_id']     ?? '');
+        $className = trim($_POST['class_name'] ?? '');
+        $number    = (int) ($_POST['number'] ?? 0);
+ 
+        if ($labId && $className && $number > 0) {
+            // Check if number conflicts with another lab
+            $existing = labs_find_by_number($number);
+            if ($existing !== null && (string)$existing['_id'] !== $labId) {
+                $_SESSION['admin_flash'] = ['type'=>'error','msg'=>"Lab number {$number} is already used by another lab."];
+            } else {
+                labs_update($labId, ['class' => $className, 'number' => $number]);
+                $_SESSION['admin_flash'] = ['type'=>'success','msg'=>"Lab {$number} ({$className}) updated."];
+            }
+        } else {
+            $_SESSION['admin_flash'] = ['type'=>'error','msg'=>'All fields are required.'];
+        }
+        redirect_to('/admin_dashboard.php?tab=labs');
+    }
+ 
+    // ── DELETE LAB ──────────────────────────────────────────
+    if ($action === 'delete_lab') {
+        $labId = trim($_POST['lab_id'] ?? '');
+        if ($labId) {
+            $lab = labs_find_by_id($labId);
+            if ($lab) {
+                labs_delete($labId);
+                $_SESSION['admin_flash'] = ['type'=>'success','msg'=>'Lab deleted. All related reservations and events were also removed.'];
+            } else {
+                $_SESSION['admin_flash'] = ['type'=>'error','msg'=>'Lab not found.'];
+            }
+        }
+        redirect_to('/admin_dashboard.php?tab=labs');
+    }
+
     // ── CREATE EVENT ──────────────────────────────────────────
     if ($action === 'create_event') {
         $labId  = trim($_POST['lab_id']      ?? '');
@@ -426,6 +486,13 @@ for ($h = 7; $h <= 22; $h++) {
     .placeholder-section h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: 8px; color: var(--text); }
     .placeholder-section p  { font-size: .85rem; max-width: 380px; margin: 0 auto; }
     .coming-badge { display: inline-block; margin-top: 14px; padding: 4px 14px; border-radius: 99px; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; background: rgba(251,191,36,.12); color: var(--warn); border: 1px solid rgba(251,191,36,.3); }
+
+    /* Seat grid preview */
+    .seat-grid-preview { display: grid; gap: 4px; margin-top: 12px; }
+    .seat-row { display: flex; gap: 4px; }
+    .seat-cell { width: 28px; height: 28px; border-radius: 4px; background: rgba(94,234,212,.15); border: 1px solid rgba(94,234,212,.3); display: flex; align-items: center; justify-content: center; font-size: .6rem; color: var(--accent); font-weight: 600; }
+
+    .lab-number-badge { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 10px; background: rgba(56,189,248,.15); border: 1px solid rgba(56,189,248,.3); font-size: 1.3rem; font-weight: 700; color: var(--lab); font-family: var(--mono); flex-shrink: 0; }
 
     /* ═══ RESPONSIVE ════════════════════════════════════════ */
     @media (max-width: 768px) {
