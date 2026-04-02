@@ -1029,15 +1029,81 @@ for ($h = 7; $h <= 22; $h++) {
         </p>
 
 
-      <!-- ═══ LABS (placeholder) ═══════════════════════════════ -->
+      <!-- ═══ LABS (FULLY FUNCTIONAL) ══════════════════════ -->
       <?php elseif ($tab === 'labs'): ?>
-        <div class="page-header"><h2>Labs &amp; Slots</h2><p>Create, configure, and manage computer laboratories and their seat/slot definitions.</p></div>
-        <div class="placeholder-section">
-          <div class="ph-icon"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg></div>
-          <h3>Labs &amp; Slot Management</h3>
-          <p>CRUD for laboratories, seat grid configuration, per-class time slot definitions, and lab status controls (Open / Occupied / Closed) will be implemented here.</p>
-          <span class="coming-badge">Coming Soon</span>
+        <div class="page-header">
+          <h2>Labs &amp; Slots</h2>
+          <p>Create, configure, and manage computer laboratories. Each lab has a fixed 7×5 seat grid (35 seats) with 30-minute slots from 7:00 AM to 7:00 PM.</p>
         </div>
+ 
+        <div style="display:flex;justify-content:flex-end;margin-bottom:18px;">
+          <button class="btn btn-lab" onclick="openModal('modal-create-lab')">Add New Laboratory</button>
+        </div>
+ 
+        <?php if (empty($allLabs)): ?>
+          <div class="placeholder-section" style="border-style:solid;">
+            <div class="ph-icon">🖥️</div>
+            <h3>No laboratories yet</h3>
+            <p>Add your first laboratory using the button above.</p>
+          </div>
+        <?php else: ?>
+          <div class="lab-list">
+            <?php foreach ($allLabs as $lab):
+              // Count reservations for this lab
+              $labResCount = count(array_filter($allRes, fn($r) => (string)($r['lab']??'') === (string)$lab['_id'] && reservation_status($r) === 'Scheduled'));
+              $labEventCount = count(array_filter($allEvents, fn($e) => (string)($e['lab']??'') === (string)$lab['_id']));
+            ?>
+            <div class="lab-item">
+              <div class="lab-number-badge"><?= (int)$lab['number'] ?></div>
+              <div class="lab-item-meta">
+                <div class="lab-item-name">Lab <?= (int)$lab['number'] ?> — <?= e($lab['class']) ?></div>
+                <div class="lab-info" style="font-size:.82rem;color:var(--muted);margin-bottom:10px;">
+                  7 rows × 5 columns &nbsp;·&nbsp; 35 seats total &nbsp;·&nbsp; Slots: 7:00 AM – 7:00 PM (30-min intervals)
+                </div>
+                <div class="lab-item-tags">
+                  <span class="lab-tag lab-tag-class"><?= e($lab['class']) ?></span>
+                  <span class="lab-tag" style="background:rgba(167,139,250,.1);color:var(--event);border:1px solid rgba(167,139,250,.25);"><?= $labResCount ?> scheduled reservations</span>
+                  <span class="lab-tag" style="background:rgba(251,191,36,.1);color:var(--warn);border:1px solid rgba(251,191,36,.25);"><?= $labEventCount ?> events</span>
+                </div>
+              </div>
+              <div class="lab-actions">
+                <button class="btn btn-ghost btn-sm" onclick="openEditLabModal('<?= e(addslashes($lab['_id'])) ?>','<?= (int)$lab['number'] ?>','<?= e(addslashes($lab['class'])) ?>')">Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="openDeleteLabModal('<?= e($lab['_id']) ?>','Lab <?= (int)$lab['number'] ?> (<?= e(addslashes($lab['class'])) ?>)')">Delete</button>
+              </div>
+            </div>
+            <?php endforeach; ?>
+          </div>
+ 
+          <!-- Slot grid reference card -->
+          <div class="card" style="margin-top:24px;">
+            <div class="card-title"><span class="icon">📋</span> Slot Schedule Reference</div>
+            <p style="font-size:.83rem;color:var(--muted);margin-bottom:16px;">All laboratories share the same time slot structure. Slots run every 30 minutes from 7:00 AM to 7:00 PM (24 slots per seat per day).</p>
+            <div style="overflow-x:auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Slot #</th>
+                    <?php for ($s = 0; $s < 24; $s++):
+                      $mins = (7*60) + ($s*30);
+                      $h = intdiv($mins,60); $m = $mins%60;
+                      $period = $h >= 12 ? 'PM' : 'AM';
+                      $h12 = $h % 12 ?: 12; ?>
+                      <th><?= sprintf('%d:%02d %s', $h12, $m, $period) ?></th>
+                    <?php endfor; ?>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="color:var(--muted);font-size:.75rem;">Index</td>
+                    <?php for ($s = 0; $s < 24; $s++): ?>
+                      <td style="text-align:center;font-family:var(--mono);font-size:.75rem;color:var(--accent);"><?= $s ?></td>
+                    <?php endfor; ?>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        <?php endif; ?>
 
 
       <!-- ═══ EVENTS (fully functional) ═══════════════════════ -->
@@ -1203,6 +1269,19 @@ function openEditUserModal(id, username, email, role) {
 function openDeleteUserModal(id) {
   document.getElementById('delete-user-id').value = id;
   openModal('modal-delete-user');
+}
+
+// Lab modals
+function openEditLabModal(id, number, className) {
+  document.getElementById('edit-lab-id').value     = id;
+  document.getElementById('edit-lab-number').value = number;
+  document.getElementById('edit-lab-class').value  = className;
+  openModal('modal-edit-lab');
+}
+function openDeleteLabModal(id, name) {
+  document.getElementById('delete-lab-id').value   = id;
+  document.getElementById('delete-lab-name').textContent = name;
+  openModal('modal-delete-lab');
 }
 
 // ── Event modals ───────────────────────────────────────────
