@@ -530,6 +530,27 @@ function labs_find_by_number(int $number): ?array
     return null;
 }
 
+function labs_update(string $id, array $fields): bool
+{
+    $stmt = db()->prepare(
+        'UPDATE labs SET class_name = ?, number = ?, updated_at = ? WHERE id = ?'
+    );
+    $stmt->execute([
+        (string) ($fields['class']  ?? ''),
+        (int)    ($fields['number'] ?? 0),
+        dt_to_db(now_iso()),
+        $id,
+    ]);
+    return $stmt->rowCount() > 0;
+}
+ 
+function labs_delete(string $id): bool
+{
+    $stmt = db()->prepare('DELETE FROM labs WHERE id = ?');
+    $stmt->execute([$id]);
+    return $stmt->rowCount() > 0;
+}
+
 function reservations_all(): array
 {
     $rows = db()->query('SELECT id, time_start, time_end, user_id, lab_id, date, anonymity, status, cancel_reason, created_at, updated_at FROM reservations')->fetchAll();
