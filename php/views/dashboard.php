@@ -27,14 +27,14 @@
           <p style="color:#166534; font-weight:600;"><?= e((string) $reserveSuccess) ?></p>
         <?php endif; ?>
 
-        <div class="dashboard-columns"> // Shows the first column with the avialable labs 
+        <div class="dashboard-columns"> 
           <div class="left-column">
             <section class="rooms-section">
               <h3>Available Rooms</h3>
               <div class="rooms-list" id="rooms">
                 <?php foreach (($labs ?? []) as $lab): ?>
                   <?php $isSelected = ((int) ($lab['number'] ?? 0) === (int) ($selectedLabNumber ?? 0)); ?>
-                  <div class="<?= $isSelected ? 'selected' : '' ?>"> // Checks if a lab is selected and highlights it 
+                  <div class="<?= $isSelected ? 'selected' : '' ?>"> 
                     <a href="/dashboard/<?= e(normalize_role_for_path((string) $role)) ?>?username=<?= rawurlencode((string) $username) ?>&lab=<?= (int) ($lab['number'] ?? 0) ?>&date=<?= rawurlencode((string) ($selectedDate ?? '')) ?>&month=<?= (int) ($monthOffset ?? 0) ?>&q=<?= rawurlencode((string) ($searchQuery ?? '')) ?>&student=<?= rawurlencode((string) ($studentQuery ?? '')) ?>" style="display:block; color:inherit; text-decoration:none;">
                       Lab <?= (int) ($lab['number'] ?? 0) ?> (<?= e((string) ($lab['class'] ?? '')) ?>)
                     </a>
@@ -44,15 +44,15 @@
             </section>
           </div>
 
-          <div class="right-column"> // Shows the calendar and the available slots for the selected lab
+          <div class="right-column"> 
             <section class="calendar-section">
               <div class="calendar-controls">
                 <a href="/dashboard/<?= e(normalize_role_for_path((string) $role)) ?>?username=<?= rawurlencode((string) $username) ?>&lab=<?= (int) ($selectedLabNumber ?? 0) ?>&date=<?= rawurlencode((string) ($selectedDate ?? '')) ?>&month=<?= (int) (($monthOffset ?? 0) - 1) ?>&q=<?= rawurlencode((string) ($searchQuery ?? '')) ?>&student=<?= rawurlencode((string) ($studentQuery ?? '')) ?>">
-                  <button type="button">Prev</button> //Previous month button
+                  <button type="button">Prev</button>
                 </a>
                 <h2><?= e((string) ($monthLabel ?? '')) ?></h2>
                 <a href="/dashboard/<?= e(normalize_role_for_path((string) $role)) ?>?username=<?= rawurlencode((string) $username) ?>&lab=<?= (int) ($selectedLabNumber ?? 0) ?>&date=<?= rawurlencode((string) ($selectedDate ?? '')) ?>&month=<?= (int) (($monthOffset ?? 0) + 1) ?>&q=<?= rawurlencode((string) ($searchQuery ?? '')) ?>&student=<?= rawurlencode((string) ($studentQuery ?? '')) ?>">
-                  <button type="button">Next</button>//Next month button
+                  <button type="button">Next</button>
                 </a>
               </div>
               <div class="calendar-grid" id="calendar">
@@ -124,7 +124,7 @@
           </div>
 
         
-          // Posts the reservation form with the selected parameters to reserve a slot
+         
           <div class="action-button">
             <form method="POST" action="/dashboard/reserve" style="max-width: 560px; margin: 0 auto; text-align:left;">
               <input type="hidden" name="lab" value="<?= (int) ($selectedLabNumber ?? 0) ?>" />
@@ -134,7 +134,7 @@
               <input type="hidden" name="sel" value="<?= e((string) ($selectedSlotsParam ?? '')) ?>" />
             
 
-              //If user is a lab technician requires to input the student they are reserving for 
+             
               <?php if ($role === 'Lab Technician'): ?>
                 <div style="margin-bottom: 12px;">
                   <label for="student_username" style="display:block; font-weight:600; margin-bottom: 4px;">Student Username</label>
@@ -148,14 +148,14 @@
                       autocomplete="off"
                       required
                     />
-                    <datalist id="student-usernames"> //Gets the list of student usernames 
+                    <datalist id="student-usernames"> 
                       <?php foreach (($studentUsernames ?? []) as $studentUsername): ?>
                         <option value="<?= e((string) $studentUsername) ?>"></option>
                       <?php endforeach; ?>
                     </datalist>
                   </div>
                 </div> 
-              <?php else: ?> //Gives students the option to reserve anonymously 
+              <?php else: ?> 
                 <div class="anonymity-wrapper" style="margin: 20px auto 0; max-width: 420px; text-align: center;">
                   <label class="anonymity-checkbox-label" style="display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; color: #2d3748; cursor: pointer;">
                     <input type="checkbox" id="anonymityToggle" name="anonymity" style="margin: 0; transform: scale(1.1);"/>
