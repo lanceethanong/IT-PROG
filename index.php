@@ -13,7 +13,7 @@ function session_username(): string
     return (string) ($_SESSION['user']['username'] ?? '');
 }
 
-// session_user_id() is now defined in bootstrap.php
+
 
 function dashboard_context(string $fallbackRole): array
 {
@@ -518,8 +518,7 @@ if ($method === 'POST' && $path === '/register') {
 
     users_upsert($newUser);
 
-    // Do not auto-login after registration. Redirect back to login
-    // with a success message so the user can sign in explicitly.
+    
     redirect_to('/login?success=' . rawurlencode('Account created. Please log in.'));
 }
 
