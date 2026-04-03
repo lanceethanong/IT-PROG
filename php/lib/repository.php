@@ -1,12 +1,9 @@
-//repository.php
-
 <?php
 
 declare(strict_types=1);
 
 require_once __DIR__ . '/bootstrap.php';
 
-//Starts the db
 function db(): PDO
 {
     static $pdo = null;
