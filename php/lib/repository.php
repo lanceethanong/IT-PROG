@@ -1,9 +1,12 @@
+//repository.php
+
 <?php
 
 declare(strict_types=1);
 
 require_once __DIR__ . '/bootstrap.php';
 
+//Starts the db
 function db(): PDO
 {
     static $pdo = null;
@@ -19,7 +22,7 @@ function db(): PDO
             $cfg = $loaded;
         }
     }
-
+    //Parameters 
     $host = (string) ($cfg['host'] ?? (getenv('DB_HOST') ?: '127.0.0.1'));
     $port = (string) ($cfg['port'] ?? (getenv('DB_PORT') ?: '3306'));
     $name = (string) ($cfg['name'] ?? (getenv('DB_NAME') ?: 'lab_res_db'));
@@ -38,9 +41,6 @@ function db(): PDO
     return $pdo;
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  EVENTS — auto-migration (runs once per process via db())
-// ══════════════════════════════════════════════════════════════════════════════
 
 /**
  * Creates the `events` table and the `cancel_reason` column on `reservations`
@@ -48,7 +48,7 @@ function db(): PDO
  */
 function events_table_ensure(PDO $pdo): void
 {
-    // events table -----------------------------------------------------------------
+    // events table 
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS events (
             id          VARCHAR(24)  NOT NULL PRIMARY KEY,
@@ -66,7 +66,7 @@ function events_table_ensure(PDO $pdo): void
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
 
-    // cancel_reason column on reservations ----------------------------------------
+    // cancel_reason column on reservations 
     // ALTER TABLE errors silently if column already exists.
     try {
         $pdo->exec('ALTER TABLE reservations ADD COLUMN cancel_reason TEXT NULL');
@@ -75,9 +75,6 @@ function events_table_ensure(PDO $pdo): void
     }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  EVENTS — helpers
-// ══════════════════════════════════════════════════════════════════════════════
 
 /** Normalise a raw DB row into the canonical event array shape. */
 function event_from_row(array $r): array
@@ -201,9 +198,6 @@ function events_delete(string $id): bool
     return $stmt->rowCount() > 0;
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  EVENTS — seat-grid blocking (called from dashboard.php)
-// ══════════════════════════════════════════════════════════════════════════════
 
 /**
  * Returns true if $slotStart–$slotEnd overlaps with the event window.
@@ -222,12 +216,6 @@ function slot_overlaps_event(string $slotStart, string $slotEnd, array $event): 
 /**
  * Returns true if ANY scheduled event blocks the given lab/date/slot.
  *
- * HOW TO USE IN dashboard.php (inside the seat-grid loop, per half-hour cell):
- *
- *   if (slot_is_blocked_by_event($lab['_id'], $selectedDate, $slotStart, $slotEnd)) {
- *       // render cell with class="unavailable"
- *       // optionally attach data-reason="..." for a tooltip
- *   }
  */
 function slot_is_blocked_by_event(
     string $labId,
@@ -264,9 +252,6 @@ function slot_block_reason(
     return '';
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  EVENTS — conflict detection & reservation cancellation
-// ══════════════════════════════════════════════════════════════════════════════
 
 /**
  * Find every Scheduled reservation that overlaps with the given event
@@ -334,10 +319,8 @@ function event_cancel_conflicting(array $event): int
     return count($conflicts);
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  ORIGINAL REPOSITORY FUNCTIONS (unchanged)
-// ══════════════════════════════════════════════════════════════════════════════
 
+//Converts dt to db format
 function dt_to_db(?string $iso): ?string
 {
     if ($iso === null || $iso === '') {
@@ -347,6 +330,7 @@ function dt_to_db(?string $iso): ?string
     return $dt->format('Y-m-d H:i:s');
 }
 
+//Converts db to dt format
 function dt_from_db(?string $db): string
 {
     if ($db === null || $db === '') {
@@ -366,6 +350,8 @@ function now_iso(): string
     return (new DateTime('now', new DateTimeZone('Asia/Manila')))->format(DATE_ATOM);
 }
 
+
+//Gets array of each user
 function users_all(): array
 {
     $rows = db()->query('SELECT id, email, username, description, remember, password, picture, role, created_at, updated_at FROM users')->fetchAll();
@@ -385,6 +371,7 @@ function users_all(): array
     }, $rows);
 }
 
+//Save users to db 
 function users_save(array $users): void
 {
     $pdo = db();
@@ -415,6 +402,7 @@ function user_without_password(array $user): array
     return $user;
 }
 
+//Helper functions to find users per parameter
 function users_find_by_email(string $email): ?array
 {
     foreach (users_all() as $user) {
@@ -445,6 +433,7 @@ function users_find_by_id(string $id): ?array
     return null;
 }
 
+//Update user information
 function users_upsert(array $updated): void
 {
     $sql = 'INSERT INTO users (id, email, username, description, remember, password, picture, role, created_at, updated_at)
@@ -472,6 +461,7 @@ function users_upsert(array $updated): void
     ]);
 }
 
+//Delete users
 function users_delete_by_username(string $username): bool
 {
     $stmt = db()->prepare('DELETE FROM users WHERE username = ?');
@@ -479,6 +469,7 @@ function users_delete_by_username(string $username): bool
     return $stmt->rowCount() > 0;
 }
 
+//Gets all labs 
 function labs_all(): array
 {
     $rows = db()->query('SELECT id, class_name, number, created_at, updated_at FROM labs ORDER BY number ASC')->fetchAll();
@@ -493,6 +484,7 @@ function labs_all(): array
     }, $rows);
 }
 
+//Insert labs to db
 function labs_insert(array $lab): array
 {
     $id = (string) ($lab['_id'] ?? new_id());
@@ -510,6 +502,7 @@ function labs_insert(array $lab): array
     ];
 }
 
+//Find lab by id or number
 function labs_find_by_id(string $id): ?array
 {
     foreach (labs_all() as $lab) {
@@ -530,6 +523,7 @@ function labs_find_by_number(int $number): ?array
     return null;
 }
 
+//Update lab information
 function labs_update(string $id, array $fields): bool
 {
     $stmt = db()->prepare(
@@ -551,6 +545,7 @@ function labs_delete(string $id): bool
     return $stmt->rowCount() > 0;
 }
 
+//Get all reservations 
 function reservations_all(): array
 {
     $rows = db()->query('SELECT id, time_start, time_end, user_id, lab_id, date, anonymity, status, cancel_reason, created_at, updated_at FROM reservations')->fetchAll();
@@ -571,6 +566,7 @@ function reservations_all(): array
     }, $rows);
 }
 
+//Save reservations to db
 function reservations_save(array $reservations): void
 {
     $pdo = db();
@@ -594,6 +590,7 @@ function reservations_save(array $reservations): void
     $pdo->commit();
 }
 
+//Find reservation by id
 function reservations_find_by_id(string $id): ?array
 {
     foreach (reservations_all() as $reservation) {
@@ -604,6 +601,7 @@ function reservations_find_by_id(string $id): ?array
     return null;
 }
 
+//Get all seats reserved for a specific class and date
 function seats_all(): array
 {
     $rows = db()->query('SELECT id, reservation_id, row_num, col_num, created_at, updated_at FROM seat_lists')->fetchAll();
@@ -619,6 +617,7 @@ function seats_all(): array
     }, $rows);
 }
 
+//Save seats to db
 function seats_save(array $seats): void
 {
     $pdo = db();
@@ -638,6 +637,7 @@ function seats_save(array $seats): void
     $pdo->commit();
 }
 
+//Gets the selected seats for a specific reservation
 function seats_for_reservation(string $reservationId): array
 {
     $stmt = db()->prepare('SELECT id, reservation_id, row_num, col_num, created_at, updated_at FROM seat_lists WHERE reservation_id = ?');
@@ -655,11 +655,13 @@ function seats_for_reservation(string $reservationId): array
     }, $rows);
 }
 
+//Delete all seats for a specific reservation 
 function seats_delete_for_reservation(string $reservationId): void
 {
     db()->prepare('DELETE FROM seat_lists WHERE reservation_id = ?')->execute([$reservationId]);
 }
 
+//Change seats for a specific reservation
 function seats_replace_for_reservation(string $reservationId, array $newSeats): void
 {
     $all = array_values(array_filter(seats_all(), static fn(array $seat): bool => (string) ($seat['reservation'] ?? '') !== $reservationId));
@@ -676,6 +678,7 @@ function seats_replace_for_reservation(string $reservationId, array $newSeats): 
     seats_save($all);
 }
 
+//GET all errors from db
 function errors_all(): array
 {
     $rows = db()->query('SELECT id, message, stack, source, timestamp, user FROM error_log ORDER BY timestamp DESC')->fetchAll();
@@ -703,6 +706,7 @@ function errors_add(array $entry): void
     ]);
 }
 
+//Convert time to minutes
 function parse_time_to_minutes(string $time): int
 {
     if (!preg_match('/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i', trim($time), $m)) {
@@ -714,7 +718,7 @@ function parse_time_to_minutes(string $time): int
     $ampm   = strtoupper($m[3]);
 
     if ($ampm === 'PM' && $hour !== 12) {
-        $hour += 12;
+        $hour += 12; // Convert to 24-hour format
     }
     if ($ampm === 'AM' && $hour === 12) {
         $hour = 0;
@@ -723,6 +727,7 @@ function parse_time_to_minutes(string $time): int
     return ($hour * 60) + $minute;
 }
 
+//Get only the date 
 function reservation_date_only(array $reservation): string
 {
     $raw = (string) ($reservation['date'] ?? '');
@@ -737,6 +742,7 @@ function reservation_date_only(array $reservation): string
     return $dt->format('Y-m-d');
 }
 
+//Get the start and end date of a reservation
 function reservation_start_dt(array $reservation): DateTime
 {
     $date    = reservation_date_only($reservation);
@@ -755,6 +761,7 @@ function reservation_end_dt(array $reservation): DateTime
     return $base;
 }
 
+//Get current status of a reservation based on the current time and reservation time
 function reservation_status(array $reservation): string
 {
     if ((string) ($reservation['status'] ?? '') === 'Cancelled') {
@@ -772,6 +779,7 @@ function reservation_status(array $reservation): string
     return 'Completed';
 }
 
+//Helper functions to determine if a reservation can be edited or deleted by student or technician
 function reservation_show_delete(array $reservation): bool
 {
     return reservation_can_delete_technician($reservation);
@@ -848,6 +856,7 @@ function enrich_reservation(array $reservation, array $seat = []): array
     return $out;
 }
 
+//Delete a reservation by id. Also deletes associated seats.
 function reservations_delete(string $id): bool
 {
     $stmt = db()->prepare('DELETE FROM reservations WHERE id = ?');
@@ -856,6 +865,7 @@ function reservations_delete(string $id): bool
     return $stmt->rowCount() > 0;
 }
 
+//Checker function to determine if a candidate reservation conflicts with existing reservations or events
 function reservation_conflicts(array $candidate, array $candidateSeats, ?string $ignoreReservationId = null): bool
 {
     $labId = (string) ($candidate['lab']  ?? '');

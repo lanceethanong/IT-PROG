@@ -1,10 +1,10 @@
 <header class="dashboard-header">
   <div class="menu-toggle" aria-hidden="true">&#9776;</div>
-  <div class="welcome-text">Welcome, <?= e($username) ?></div>
+  <div class="welcome-text">Welcome, <?= e($username) ?></div> //gets the username of the logged in user and displays it in the header
   <h1 class="site-title">EZLabs</h1>
 
   <?php
-    $headerSearchUsers = [];
+    $headerSearchUsers = [];  //Searches for users to display in the search results on the header. This is used to provide instant search results as the user types in the search input. It retrieves all users from the database and encodes them as JSON to be used by JavaScript for filtering and displaying search results without needing additional server requests.
     foreach (users_all() as $u) {
       $headerSearchUsers[] = [
         'username' => (string) ($u['username'] ?? ''),
@@ -16,15 +16,17 @@
   <script id="search-users-json" type="application/json"><?= (string) json_encode($headerSearchUsers, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?></script>
 
   <div class="search-wrapper">
-    <form class="search-container" method="GET" action="/dashboard/search-user">
+    <form class="search-container" method="GET" action="/dashboard/search-user"> 
       <input type="hidden" name="username" value="<?= e($username) ?>" />
       <input type="hidden" name="role" value="<?= e($role) ?>" />
+      //Preserves the current filters and search parameters when performing a new search from the header.
       <?php if (isset($selectedLabNumber)): ?><input type="hidden" name="lab" value="<?= (int) $selectedLabNumber ?>" /><?php endif; ?>
       <?php if (isset($selectedDate)): ?><input type="hidden" name="date" value="<?= e((string) $selectedDate) ?>" /><?php endif; ?>
       <?php if (isset($monthOffset)): ?><input type="hidden" name="month" value="<?= (int) $monthOffset ?>" /><?php endif; ?>
       <?php if (isset($studentQuery)): ?><input type="hidden" name="student" value="<?= e((string) $studentQuery) ?>" /><?php endif; ?>
       <?php if (isset($selectedSlotsParam) && (string) $selectedSlotsParam !== ''): ?><input type="hidden" name="sel" value="<?= e((string) $selectedSlotsParam) ?>" /><?php endif; ?>
-      <input
+      //Inputs for searching for users 
+        <input
         type="text"
         placeholder="Search users..."
         class="search-input"
@@ -59,6 +61,7 @@
     </div>
   </div>
 
+  //Path for each user
   <a href="/dashboard/<?= e(normalize_role_for_path($role)) ?>/profile?username=<?= rawurlencode($username) ?>" class="profile-link">
     <img src="/public/assets/profile.png" alt="Profile" class="profile-pic" />
   </a>

@@ -7,7 +7,7 @@ date_default_timezone_set('Asia/Manila');
 $sessionLifetime = 60 * 60 * 24 * 30; // 30 days for server-side session GC window.
 ini_set('session.gc_maxlifetime', (string) $sessionLifetime);
 
-$isHttps = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+$isHttps = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'; // Detect if the request is over HTTPS for secure cookie setting.
 $scriptName = (string) ($_SERVER['SCRIPT_NAME'] ?? '');
 $scriptDir = str_replace('\\', '/', dirname($scriptName));
 $basePath = ($scriptDir === '/' || $scriptDir === '.') ? '' : rtrim($scriptDir, '/');
@@ -20,10 +20,11 @@ session_set_cookie_params([
     'secure' => $isHttps,
 ]);
 
-if (session_status() !== PHP_SESSION_ACTIVE) {
+if (session_status() !== PHP_SESSION_ACTIVE) { // Checks if there is a current session
     session_start();
 }
 
+// Helper functions for consistent path and request handling 
 function base_path(): string
 {
     $scriptName = (string) ($_SERVER['SCRIPT_NAME'] ?? '');
@@ -70,8 +71,7 @@ function request_path(): string
         return '/';
     }
 
-    // Apache may provide encoded URI (/IT-PROG%20MP) while SCRIPT_NAME has spaces.
-    // Decode both before prefix stripping so subfolder deployments with spaces work.
+
     $path = rawurldecode($path);
 
     $base = rawurldecode(base_path());
@@ -82,6 +82,7 @@ function request_path(): string
     return rtrim($path, '/') ?: '/';
 }
 
+// Returns the HTTP method of the request, defaulting to 'GET' if not set.
 function request_method(): string
 {
     return strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
@@ -123,7 +124,7 @@ function redirect_to(string $path): never
     exit;
 }
 
-function render_view(string $viewFile, array $vars = []): never
+function render_view(string $viewFile, array $vars = []): never // Renders PHP view files 
 {
     extract($vars, EXTR_SKIP);
     ob_start();
@@ -153,12 +154,13 @@ function server_error(string $message = 'Server error'): never
 
 function normalize_role_for_path(string $role): string
 {
-    return stripos($role, 'technician') !== false ? 'technician' : 'student';
+    return stripos($role, 'technician') !== false ? 'technician' : 'student'; // normalizes paths based on roles 
 }
 
+// Functions to enforce authentication and authorization rules in route handlers.
 function require_login(): void
 {
-    if (empty($_SESSION['user'])) {
+    if (empty($_SESSION['user'])) { // No logged in user
         redirect_to('/login');
     }
 }
@@ -166,16 +168,16 @@ function require_login(): void
 function require_role(string $role): void
 {
     require_login();
-    $actual = (string) ($_SESSION['user']['role'] ?? '');
+    $actual = (string) ($_SESSION['user']['role'] ?? ''); // Requires each user to have a role 
     if ($actual !== $role) {
         redirect_to('/login');
     }
 }
 
-function bypass_login_if_session_exists(): void
+function bypass_login_if_session_exists(): void 
 {
-    if (empty($_SESSION['user'])) {
-        return;
+    if (empty($_SESSION['user'])) { //Checks if there is a current logged in user 
+        return; //if none return to login page
     }
 
     $username = rawurlencode((string) $_SESSION['user']['username']);
@@ -191,7 +193,7 @@ function bypass_login_if_session_exists(): void
 
 function status_class(string $status): string
 {
-    return match ($status) {
+    return match ($status) { // Colors of each status on the dashboard
         'Cancelled' => 'red',
         'Completed' => 'green',
         'In Progress' => 'yellow',
@@ -200,6 +202,7 @@ function status_class(string $status): string
     };
 }
 
+//Helper function to format dates to
 function format_manila_date(string $date): string
 {
     if ($date === '') {
@@ -215,6 +218,7 @@ function format_manila_date(string $date): string
     return $dt->format('Y-m-d');
 }
 
+//Get user id from session
 function session_user_id(): string
 {
     return (string) ($_SESSION['user']['id'] ?? '');
