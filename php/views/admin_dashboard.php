@@ -327,8 +327,8 @@ for ($h = 7; $h <= 22; $h++) {
       --bg:        #ffffff;        /* Pure white instead of off-white */
       --surface:   #ffffff;        /* Pure white */
       --surface2:  #f3f4f6;        /* Slightly lighter gray */
-      --border:    #d1d5db;        /* Darker border for contrast */
-      --text:      #1f2937;        /* Darker text */
+      --border:    #b6b6b6;        /* Darker border for contrast */
+      --text:      #000000;        /* Darker text */
       --muted:     #6b7280;        /* Keep muted */
       --primary:   #16a34a;        /* Brighter green from user dashboard */
       --primary-light: #dcfce7;    /* Brighter light green */
@@ -402,7 +402,7 @@ html { font-size: 15px; }
       font-size: .65rem; 
       text-transform: uppercase; 
       letter-spacing: 1.5px; 
-      color: var(--muted); 
+      color: var(--text); 
       padding: 14px 20px 6px; 
       font-weight: 600; 
     }
@@ -673,6 +673,7 @@ html { font-size: 15px; }
       border: 1px solid transparent;
       cursor: pointer;
       transition: all 0.2s;
+      text-decoration: none; 
     }
 
     .btn-primary { 
@@ -683,7 +684,7 @@ html { font-size: 15px; }
   }
 
 .btn-primary:hover { 
-  background: #15803d;  /* Darker on hover */
+  background: #15803d;  
   box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
   }
 
@@ -699,7 +700,7 @@ html { font-size: 15px; }
 
     .btn-ghost { 
       background: transparent; 
-      color: var(--muted); 
+      color: var(--text); 
       border-color: var(--border); 
     }
 
@@ -710,13 +711,12 @@ html { font-size: 15px; }
     }
 
     .btn-event { 
-      background: rgba(124, 58, 237, 0.15); 
-      color: #7c3aed; 
-      border-color: rgba(124, 58, 237, 0.3); 
+      background: #16a34a;
+      color: white;
     }
 
     .btn-event:hover { 
-      background: rgba(124, 58, 237, 0.25); 
+      background: #15803d;
     }
 
     .btn-sm { padding: 5px 10px; font-size: .78rem; }
