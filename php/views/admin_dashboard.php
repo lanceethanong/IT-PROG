@@ -1792,11 +1792,6 @@ html { font-size: 15px; }
             <input type="hidden" name="_action" value="save_settings" />
             <div class="settings-grid">
               <div class="form-group">
-                <label>Site Name</label>
-                <input class="form-control" type="text" name="site_name" value="<?= e($settings['site_name']) ?>" required />
-                <span class="form-hint">Displayed in the browser tab and header.</span>
-              </div>
-              <div class="form-group">
                 <label>Max Seats per Lab</label>
                 <input class="form-control" type="number" name="max_seats" value="<?= (int)$settings['max_seats'] ?>" min="1" max="200" required />
                 <span class="form-hint">Default seat count when creating a new lab.</span>
@@ -1829,7 +1824,6 @@ html { font-size: 15px; }
             <table>
               <thead><tr><th>Setting</th><th>Current Value</th></tr></thead>
               <tbody>
-                <tr><td>Site Name</td>        <td style="font-family:var(--mono);color:var(--accent);"><?= e($settings['site_name']) ?></td></tr>
                 <tr><td>Max Seats per Lab</td><td style="font-family:var(--mono);color:var(--accent);"><?= (int)$settings['max_seats'] ?></td></tr>
                 <tr><td>Advance Booking</td>  <td style="font-family:var(--mono);color:var(--accent);"><?= (int)$settings['advance_days'] ?> days</td></tr>
                 <tr><td>Cancel Cutoff</td>    <td style="font-family:var(--mono);color:var(--accent);"><?= (int)$settings['cancel_minutes'] ?> minutes</td></tr>
