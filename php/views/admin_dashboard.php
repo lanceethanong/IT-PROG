@@ -1287,7 +1287,6 @@ html { font-size: 15px; }
  
 <div class="modal-overlay" id="modal-delete-lab">
   <div class="modal" style="max-width:420px;text-align:center;">
-    <div style="display:flex;justify-content:center;margin-bottom:12px;">⚠️</div>
     <h3 style="margin-bottom:8px;font-size:1.1rem;">Delete this laboratory?</h3>
     <p style="color:var(--muted);font-size:.85rem;margin-bottom:4px;">
       This will permanently delete <strong id="delete-lab-name" style="color:var(--text);"></strong>.
