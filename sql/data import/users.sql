@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3307
--- Generation Time: Mar 29, 2026 at 12:14 PM
+-- Generation Time: Apr 04, 2026 at 12:21 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -27,6 +27,18 @@ SET time_zone = "+00:00";
 -- Table structure for table `users`
 --
 
+CREATE TABLE `users` (
+  `id` varchar(24) NOT NULL,
+  `email` varchar(191) NOT NULL,
+  `username` varchar(191) NOT NULL,
+  `description` text DEFAULT NULL,
+  `remember` tinyint(1) NOT NULL DEFAULT 0,
+  `password` varchar(255) NOT NULL,
+  `picture` varchar(255) NOT NULL DEFAULT 'picture.jpg',
+  `role` enum('Student','Lab Technician','Admin') NOT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `users`
@@ -40,7 +52,9 @@ INSERT INTO `users` (`id`, `email`, `username`, `description`, `remember`, `pass
 ('688f26e15b054f0a8eb23881', 'adam789@dlsu.edu.ph', 'adam', '', 0, '$2b$10$Vm10u0LZlXRDLK/U/Y/YNe.bwbere48bmGxB/i4b3xMcqJ3JYwJgi', 'picture.jpg', 'Student', '2025-08-03 09:07:45', '2025-08-03 09:07:45'),
 ('688f27165b054f0a8eb2388b', 'apdev123@dlsu.edu.ph', 'APPDEV', '', 0, '$2b$10$GxY/tNr21mVdPaVhLduQG.ByjoUlk37h77AuB3R1x2owndsnh9a.i', 'picture.jpg', 'Student', '2025-08-03 09:08:38', '2025-08-03 09:08:38'),
 ('688f280a5b054f0a8eb23897', 'arch2345@dlsu.edu.ph', 'arch2', '', 0, '$2b$10$DNELYMGpiysgjXjNMuXds.Bnfef2/cU44xQhLBp7a4tYWizmp/QMS', 'picture.jpg', 'Student', '2025-08-03 09:12:42', '2025-08-03 09:12:42'),
-('8a9240b83eb9ea77a26f88b9', 'pawstayph@dlsu.edu.ph', 'ITPROG', 'test edit', 0, '$2y$10$aWE2ZIizb62oJgHxJjzKQ.dbNx.u/n3DPBoNqPQcQOGqmWw3ehCFO', 'picture.jpg', 'Lab Technician', '2026-03-14 10:08:36', '2026-03-17 09:58:07');
+('84f8b05bd0666f69701d8022', 'pawstayph@gmail.com', '1234', '', 0, '$2y$10$mJhwqd8YFA.Rq5GBCiKWh.gGdBeD2ZU92tSy5DJ76blEQB3mEyo1i', 'picture.jpg', 'Admin', '2026-03-30 17:51:21', '2026-03-30 17:51:21'),
+('8a9240b83eb9ea77a26f88b9', 'pawstayph@dlsu.edu.ph', 'ITPROG', 'test edit', 0, '$2y$10$aWE2ZIizb62oJgHxJjzKQ.dbNx.u/n3DPBoNqPQcQOGqmWw3ehCFO', 'picture.jpg', 'Admin', '2026-03-14 10:08:36', '2026-03-17 09:58:07'),
+('d8a9b821db64d35a8fe0cae1', '123@gmail.com', '123', '', 0, '$2y$10$vgK1nTwO4BZruHuzMWRkBu30PKhxwYuQytrrdwSvIKYOhfNbBl4X2', 'picture.jpg', 'Student', '2026-04-03 22:30:11', '2026-04-03 22:30:11');
 
 --
 -- Indexes for dumped tables

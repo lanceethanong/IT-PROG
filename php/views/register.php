@@ -22,7 +22,7 @@
         </div>
 
         <div class="form-group">
-          <label for="email">DLSU Email</label><br />
+          <label for="email">Email</label><br />
           <input type="email" id="email" name="email" required />
           <span id="emailError" class="error-message"></span>
         </div>
