@@ -336,7 +336,7 @@ for ($h = 7; $h <= 22; $h++) {
       --success:   #16a34a;
       --danger:    #dc2626;        /* Brighter red */
       --warn:      #d97706;        /* Brighter orange */
-      --event:     #7c3aed;        /* Brighter purple */
+      --event:     #006400;
 
       /* Sizing */
       --radius:        6px;        
@@ -477,31 +477,31 @@ html { font-size: 15px; }
     /* ─── Top bar ───────────────────────────────────────────── */
     .topbar { 
       height: 60px; 
-      background: var(--primary);
+      background: white;
       border-bottom: 1px solid var(--border); 
       display: flex; 
       align-items: center; 
       padding: 0 28px; 
       gap: 16px; 
       flex-shrink: 0; 
-      color: white;
+      color: var(--text);
     }
 
     .topbar-title { 
       font-size: 1rem; 
       font-weight: 600; 
       flex: 1; 
-      color: white;
+      color: var(--text);
     }
 
     .topbar-badge { 
-      background: rgba(255, 255, 255, 0.2); 
-      color: white; 
+      background: rgba(0, 0, 0, 0.1); 
+      color: var(--text); 
       font-size: .7rem; 
       font-weight: 600; 
       padding: 3px 10px; 
       border-radius: 99px; 
-      border: 1px solid rgba(255, 255, 255, 0.3);
+      border: 1px solid rgba(0, 0, 0, 0.2);
     }
 
     .topbar-user { 
@@ -509,18 +509,18 @@ html { font-size: 15px; }
       align-items: center; 
       gap: 8px; 
       font-size: .8rem; 
-      color: rgba(255, 255, 255, 0.9);
+      color: var(--text);
     }
 
     .topbar-avatar { 
       width: 32px; 
       height: 32px; 
       border-radius: 50%; 
-      background: rgba(255, 255, 255, 0.2); 
+      background: rgba(0, 0, 0, 0.1); 
       display: flex; 
       align-items: center; 
       justify-content: center;
-      color: white;
+      color: var(--text);
       font-weight: bold;
     }
 
@@ -555,7 +555,18 @@ html { font-size: 15px; }
     }
 
     /* ═══ PAGE HEADER ════════════════════════════════════════ */
-    .page-header { margin-bottom: 24px; }
+    .page-header { 
+      margin-bottom: 24px; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: flex-start; 
+    }
+
+    .page-header-user { 
+      display: flex; 
+      gap: 10px; 
+      align-items: center; 
+    }
     .page-header h2 { 
       font-size: 1.5rem; 
       font-weight: 700; 
@@ -796,9 +807,9 @@ html { font-size: 15px; }
       border-radius: 99px; 
       font-size: .7rem; 
       font-weight: 700; 
-      background: rgba(124, 58, 237, 0.15); 
-      color: #7c3aed; 
-      border: 1px solid rgba(124, 58, 237, 0.25); 
+      background: rgba(0, 100, 0, 0.15); 
+      color: #006400; 
+      border: 1px solid rgba(0, 100, 0, 0.25); 
     }
 
     /* ═══ FORM ══════════════════════════════════════════════ */
@@ -997,9 +1008,9 @@ html { font-size: 15px; }
     }
 
     .event-tag-date { 
-      background: rgba(124, 58, 237, 0.1); 
-      color: #7c3aed; 
-      border: 1px solid rgba(124, 58, 237, 0.25); 
+      background: rgba(0, 100, 0, 0.1); 
+      color: #006400; 
+      border: 1px solid rgba(0, 100, 0, 0.25); 
     }
 
     .event-tag-time { 
@@ -1020,6 +1031,7 @@ html { font-size: 15px; }
       gap: 16px;
       align-items: flex-start;
       transition: all .2s;
+      margin-bottom: 16px;
     }
 
     .lab-item:hover {
@@ -1052,6 +1064,41 @@ html { font-size: 15px; }
     }
 
     .lab-actions { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+
+    .slot-schedule-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); 
+      gap: 12px; 
+      margin-top: 16px;
+    }
+
+    .slot-item { 
+      background: var(--surface2); 
+      border: 1px solid var(--border); 
+      border-radius: 6px; 
+      padding: 14px 12px; 
+      text-align: center; 
+      transition: all 0.2s;
+    }
+
+    .slot-item:hover {
+      border-color: var(--primary);
+      background: rgba(22, 163, 74, 0.08);
+    }
+
+    .slot-time { 
+      font-weight: 600; 
+      font-size: 0.9rem; 
+      color: var(--primary); 
+      margin-bottom: 6px;
+    }
+
+    .slot-index { 
+      font-size: 0.75rem; 
+      color: var(--muted); 
+      font-family: var(--mono); 
+      letter-spacing: 0.5px;
+    }
 
     .lab-number-badge {
       display: inline-flex;
@@ -1117,7 +1164,6 @@ html { font-size: 15px; }
       .form-grid, .form-grid.three, .settings-grid { grid-template-columns: 1fr; }
       .event-item { flex-direction: column; }
       .event-actions { flex-direction: row; }
-      .topbar { flex-wrap: wrap; }
     }
   </style>
 </head>
@@ -1261,7 +1307,7 @@ html { font-size: 15px; }
         </div>
       </div>
       <div class="form-actions">
-        <button type="submit" class="btn btn-lab">Add Laboratory</button>
+        <button type="submit" class="btn btn-primary">Add Laboratory</button>
         <button type="button" class="btn btn-ghost" onclick="closeModal('modal-create-lab')">Cancel</button>
       </div>
     </form>
@@ -1496,17 +1542,6 @@ html { font-size: 15px; }
   </aside>
 
   <div class="main">
-    <div class="topbar">
-      <span class="topbar-title">
-        <?php $titles=['overview'=>'Overview','users'=>'User Management','labs'=>'Labs & Slots','events'=>'Event Scheduler','settings'=>'System Settings'];
-              echo e($titles[$tab] ?? 'Admin'); ?>
-      </span>
-      <span class="topbar-badge">Admin</span>
-      <div class="topbar-user">
-        <div class="topbar-avatar"><?= strtoupper(substr($sessionName,0,1)) ?></div>
-        <span><?= e($sessionName) ?></span>
-      </div>
-    </div>
 
     <div class="content">
 
@@ -1524,8 +1559,17 @@ html { font-size: 15px; }
       <!-- ═══ OVERVIEW ════════════════════════════════════════ -->
       <?php if ($tab === 'overview'): ?>
         <div class="page-header">
-          <h2>System Overview</h2>
-          <p>Live snapshot of EZLabs activity</p>
+          <div>
+            <h2>System Overview</h2>
+            <p>Live snapshot of EZLabs activity</p>
+          </div>
+          <div class="page-header-user">
+            <span class="topbar-badge">Admin</span>
+            <div class="topbar-user">
+              <div class="topbar-avatar"><?= strtoupper(substr($sessionName,0,1)) ?></div>
+              <span><?= e($sessionName) ?></span>
+            </div>
+          </div>
         </div>
         <div class="stats-grid">
           <div class="stat-card"><div class="stat-label">Students</div><div class="stat-val"><?= $statStudents ?></div><div class="stat-sub">Registered accounts</div></div>
@@ -1573,8 +1617,17 @@ html { font-size: 15px; }
       <!-- ═══ USERS ════════════════════════════════════════════ -->
       <?php elseif ($tab === 'users'): ?>
         <div class="page-header">
-          <h2>User Management</h2>
-          <p>Create, edit, and remove system accounts. Assign roles.</p>
+          <div>
+            <h2>User Management</h2>
+            <p>Create, edit, and remove system accounts. Assign roles.</p>
+          </div>
+          <div class="page-header-user">
+            <span class="topbar-badge">Admin</span>
+            <div class="topbar-user">
+              <div class="topbar-avatar"><?= strtoupper(substr($sessionName,0,1)) ?></div>
+              <span><?= e($sessionName) ?></span>
+            </div>
+          </div>
         </div>
         <form method="GET" action="">
           <input type="hidden" name="tab" value="users" />
@@ -1647,12 +1700,21 @@ html { font-size: 15px; }
       <!-- ═══ LABS (FULLY FUNCTIONAL) ══════════════════════ -->
       <?php elseif ($tab === 'labs'): ?>
         <div class="page-header">
-          <h2>Labs &amp; Slots</h2>
-          <p>Create, configure, and manage computer laboratories. Each lab has a fixed 7×5 seat grid (35 seats) with 30-minute slots from 7:00 AM to 7:00 PM.</p>
+          <div>
+            <h2>Labs &amp; Slots</h2>
+            <p>Create, configure, and manage computer laboratories. Each lab has a fixed 7×5 seat grid (35 seats) with 30-minute slots from 7:00 AM to 7:00 PM.</p>
+          </div>
+          <div class="page-header-user">
+            <span class="topbar-badge">Admin</span>
+            <div class="topbar-user">
+              <div class="topbar-avatar"><?= strtoupper(substr($sessionName,0,1)) ?></div>
+              <span><?= e($sessionName) ?></span>
+            </div>
+          </div>
         </div>
  
         <div style="display:flex;justify-content:flex-end;margin-bottom:18px;">
-          <button class="btn btn-lab" onclick="openModal('modal-create-lab')">Add New Laboratory</button>
+          <button class="btn btn-primary" onclick="openModal('modal-create-lab')">Add New Laboratory</button>
         </div>
  
         <?php if (empty($allLabs)): ?>
@@ -1691,11 +1753,11 @@ html { font-size: 15px; }
  
           <!-- Slot grid reference card -->
           <div class="card" style="margin-top:24px;">
-            <div class="card-title"><span class="icon">📋</span> Slot Schedule Reference</div>
+            <div class="card-title">Slot Schedule Reference</div>
             <p style="font-size:.83rem;color:var(--muted);margin-bottom:16px;">All laboratories share the same time slot structure. Slots run every 30 minutes from 7:00 AM to 7:00 PM (24 slots per seat per day).</p>
             <div style="overflow-x:auto;">
-              <table>
-                <thead>
+              <table style="font-size: 0.9rem;">
+                <thead style="font-size: 0.8rem;">
                   <tr>
                     <th>Slot #</th>
                     <?php for ($s = 0; $s < 24; $s++):
@@ -1707,11 +1769,11 @@ html { font-size: 15px; }
                     <?php endfor; ?>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody style="font-size: 0.85rem;">
                   <tr>
                     <td style="color:var(--muted);font-size:.75rem;">Index</td>
                     <?php for ($s = 0; $s < 24; $s++): ?>
-                      <td style="text-align:center;font-family:var(--mono);font-size:.75rem;color:var(--accent);"><?= $s ?></td>
+                      <td style="text-align:center;font-family:var(--mono);font-size:.8rem;color:var(--accent);"><?= $s ?></td>
                     <?php endfor; ?>
                   </tr>
                 </tbody>
@@ -1724,11 +1786,20 @@ html { font-size: 15px; }
       <!-- ═══ EVENTS (fully functional) ═══════════════════════ -->
       <?php elseif ($tab === 'events'): ?>
         <div class="page-header">
-          <h2>Event Scheduler</h2>
-          <p>
-            Block lab availability for a defined window. All conflicting Scheduled reservations
-            are automatically cancelled — students will see your event description as the reason.
-          </p>
+          <div>
+            <h2>Event Scheduler</h2>
+            <p>
+              Block lab availability for a defined window. All conflicting Scheduled reservations
+              are automatically cancelled — students will see your event description as the reason.
+            </p>
+          </div>
+          <div class="page-header-user">
+            <span class="topbar-badge">Admin</span>
+            <div class="topbar-user">
+              <div class="topbar-avatar"><?= strtoupper(substr($sessionName,0,1)) ?></div>
+              <span><?= e($sessionName) ?></span>
+            </div>
+          </div>
         </div>
 
         <div style="display:flex;justify-content:flex-end;margin-bottom:18px;">
@@ -1783,7 +1854,19 @@ html { font-size: 15px; }
 
       <!-- ═══ SETTINGS (fully functional) ════════════════════ -->
       <?php elseif ($tab === 'settings'): ?>
-        <div class="page-header"><h2>System Settings</h2><p>Configure global behaviour rules for EZLabs.</p></div>
+        <div class="page-header">
+          <div>
+            <h2>System Settings</h2>
+            <p>Configure global behaviour rules for EZLabs.</p>
+          </div>
+          <div class="page-header-user">
+            <span class="topbar-badge">Admin</span>
+            <div class="topbar-user">
+              <div class="topbar-avatar"><?= strtoupper(substr($sessionName,0,1)) ?></div>
+              <span><?= e($sessionName) ?></span>
+            </div>
+          </div>
+        </div>
         <div class="card">
           <div class="card-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> Operational Rules</div>
           <div class="settings-note" style="display:flex;align-items:flex-start;gap:8px;">
