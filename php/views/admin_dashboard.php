@@ -961,30 +961,17 @@ html { font-size: 15px; }
 
     .event-item-tags { display: flex; gap: 8px; flex-wrap: wrap; }
 
-    .event-tag-lab { 
-      background: #d1fae5;           
-      color: #047857;                
-      border: 1px solid #6ee7b7;     
+    .event-tag-lab, .event-tag-date, .event-tag-time {
+      background: transparent;
+      border: none;
       font-weight: 600;
+      color: var(--text);
+      padding: 0;
     }
 
-    .event-tag-lab { 
-      background: rgba(34, 84, 61, 0.1); 
-      color: var(--primary); 
-      border: 1px solid rgba(34, 84, 61, 0.25); 
-    }
-
-    .event-tag-date { 
-      background: rgba(0, 100, 0, 0.1); 
-      color: #006400; 
-      border: 1px solid rgba(0, 100, 0, 0.25); 
-    }
-
-    .event-tag-time { 
-      background: rgba(251, 191, 36, 0.1); 
-      color: var(--warn); 
-      border: 1px solid rgba(251, 191, 36, 0.25); 
-    }
+    .event-tag-lab { color: var(--primary); }
+    .event-tag-date { color: #006400; }
+    .event-tag-time { color: var(--warn); }
 
     .event-actions { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
 
@@ -1021,12 +1008,6 @@ html { font-size: 15px; }
       padding: 2px 9px;
       border-radius: 99px;
       font-weight: 600;
-    }
-
-    .lab-tag-class {
-      background: rgba(34, 84, 61, 0.1);
-      color: var(--primary);
-      border: 1px solid rgba(34, 84, 61, 0.25);
     }
 
     .lab-actions { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
@@ -1702,7 +1683,6 @@ html { font-size: 15px; }
                   7 rows × 5 columns &nbsp;·&nbsp; 35 seats total &nbsp;·&nbsp; Slots: 7:00 AM – 7:00 PM (30-min intervals)
                 </div>
                 <div class="lab-item-tags">
-                  <span class="lab-tag lab-tag-class"><?= e($lab['class']) ?></span>
                   <span class="lab-tag" style="background:rgba(167,139,250,.1);color:var(--event);border:1px solid rgba(167,139,250,.25);"><?= $labResCount ?> scheduled reservations</span>
                   <span class="lab-tag" style="background:rgba(251,191,36,.1);color:var(--warn);border:1px solid rgba(251,191,36,.25);"><?= $labEventCount ?> events</span>
                 </div>
