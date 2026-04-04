@@ -8,18 +8,15 @@
 
 require_once __DIR__ . '/../lib/repository.php';
 
-// ── Auth guard ────────────────────────────────────────────────
 require_role('Admin');
 $sessionUser = $_SESSION['user'] ?? [];
 $sessionName = (string) ($sessionUser['username'] ?? '');
 $sessionId   = (string) ($sessionUser['_id']      ?? '');
 
-// ── Active tab ────────────────────────────────────────────────
 $tab          = $_GET['tab'] ?? 'overview';
 $allowedTabs  = ['overview', 'users', 'labs', 'events', 'settings'];
 if (!in_array($tab, $allowedTabs, true)) $tab = 'overview';
 
-// ── Flash ─────────────────────────────────────────────────────
 $flash = $_SESSION['admin_flash'] ?? null;
 unset($_SESSION['admin_flash']);
 
@@ -29,7 +26,6 @@ unset($_SESSION['admin_flash']);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['_action'] ?? '';
 
-    // ── CREATE USER ──────────────────────────────────────────
     if ($action === 'create_user') {
         $uname   = trim($_POST['username'] ?? '');
         $email   = trim($_POST['email']    ?? '');
@@ -58,7 +54,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect_to('/admin_dashboard.php?tab=users');
     }
 
-    // ── EDIT USER ────────────────────────────────────────────
     if ($action === 'edit_user') {
         $uid2    = trim($_POST['user_id']  ?? '');
         $uname   = trim($_POST['username'] ?? '');
@@ -84,7 +79,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect_to('/admin_dashboard.php?tab=users');
     }
 
-    // ── DELETE USER ──────────────────────────────────────────
     if ($action === 'delete_user') {
         $uid2 = trim($_POST['user_id'] ?? '');
         if ($uid2 && $uid2 !== $sessionId) {
@@ -99,7 +93,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect_to('/admin_dashboard.php?tab=users');
     }
 
-    // ── CREATE LAB ──────────────────────────────────────────
     if ($action === 'create_lab') {
         $className = trim($_POST['class_name'] ?? '');
         $number    = (int) ($_POST['number'] ?? 0);
@@ -123,14 +116,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect_to('/admin_dashboard.php?tab=labs');
     }
  
-    // ── EDIT LAB ────────────────────────────────────────────
     if ($action === 'edit_lab') {
         $labId     = trim($_POST['lab_id']     ?? '');
         $className = trim($_POST['class_name'] ?? '');
         $number    = (int) ($_POST['number'] ?? 0);
  
         if ($labId && $className && $number > 0) {
-            // Check if number conflicts with another lab
             $existing = labs_find_by_number($number);
             if ($existing !== null && (string)$existing['_id'] !== $labId) {
                 $_SESSION['admin_flash'] = ['type'=>'error','msg'=>"Lab number {$number} is already used by another lab."];
@@ -144,7 +135,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect_to('/admin_dashboard.php?tab=labs');
     }
  
-    // ── DELETE LAB ──────────────────────────────────────────
     if ($action === 'delete_lab') {
         $labId = trim($_POST['lab_id'] ?? '');
         if ($labId) {
@@ -159,7 +149,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect_to('/admin_dashboard.php?tab=labs');
     }
 
-    // ── CREATE EVENT ──────────────────────────────────────────
     if ($action === 'create_event') {
         $labId  = trim($_POST['lab_id']      ?? '');
         $name   = trim($_POST['name']        ?? '');
@@ -190,7 +179,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect_to('/admin_dashboard.php?tab=events');
     }
 
-    // ── EDIT EVENT ────────────────────────────────────────────
     if ($action === 'edit_event') {
         $evId   = trim($_POST['event_id']    ?? '');
         $labId  = trim($_POST['lab_id']      ?? '');
@@ -209,7 +197,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'time_start'  => $tStart,
                 'time_end'    => $tEnd,
             ]);
-            // Re-run conflict cancellation with updated window.
             $updatedEvent = events_find_by_id($evId);
             $cancelled = $updatedEvent ? event_cancel_conflicting($updatedEvent) : 0;
             $msg = "Event «{$name}» updated.";
@@ -223,7 +210,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect_to('/admin_dashboard.php?tab=events');
     }
 
-    // ── DELETE EVENT ──────────────────────────────────────────
     if ($action === 'delete_event') {
         $evId = trim($_POST['event_id'] ?? '');
         if ($evId && events_delete($evId)) {
@@ -234,7 +220,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect_to('/admin_dashboard.php?tab=events');
     }
 
-    // ── SYSTEM SETTINGS ───────────────────────────────────────
     if ($action === 'save_settings') {
         $_SESSION['sys_settings'] = [
             'site_name'      => trim($_POST['site_name']      ?? 'EZLabs'),
@@ -267,7 +252,6 @@ $filtered = array_filter($allUsers, function (array $u) use ($search, $roleFilte
     return $matchSearch && $matchRole;
 });
 $filtered    = array_values($filtered);
-// Sort newest first
 usort($filtered, fn($a, $b) => strcmp((string)($b['createdAt']??''), (string)($a['createdAt']??'')));
 
 $totalUsers = count($filtered);
@@ -284,7 +268,6 @@ foreach ($allLabs as $l) {
     $labById[(string)$l['_id']] = 'Lab ' . $l['number'] . ' (' . $l['class'] . ')';
 }
 
-// ── Overview stats ───────────────────────────────────────────
 $statStudents = count(array_filter($allUsers, fn($u) => $u['role'] === 'Student'));
 $statTechs    = count(array_filter($allUsers, fn($u) => $u['role'] === 'Lab Technician'));
 $statAdmins   = count(array_filter($allUsers, fn($u) => $u['role'] === 'Admin'));
@@ -293,7 +276,6 @@ $allRes       = reservations_all();
 $statRes      = count(array_filter($allRes, fn($r) => reservation_status($r) === 'Scheduled'));
 $statEvents   = count($allEvents);
 
-// ── System settings ───────────────────────────────────────────
 $settings = $_SESSION['sys_settings'] ?? [
     'site_name'      => 'EZLabs',
     'grace_minutes'  => 10,
@@ -302,7 +284,6 @@ $settings = $_SESSION['sys_settings'] ?? [
     'max_seats'      => 35,
 ];
 
-// ── Time options for event form (7 AM – 10 PM in 30-min steps) ─
 $timeOptions = [];
 for ($h = 7; $h <= 22; $h++) {
     foreach ([0, 30] as $m) {
@@ -320,33 +301,30 @@ for ($h = 7; $h <= 22; $h++) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Dashboard — EZLabs</title>
   <style>
-    /* ═══ RESET ══════════════════════════════════════════════ */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:        #ffffff;        /* Pure white instead of off-white */
-      --surface:   #ffffff;        /* Pure white */
-      --surface2:  #f3f4f6;        /* Slightly lighter gray */
-      --border:    #b6b6b6;        /* Darker border for contrast */
-      --text:      #000000;        /* Darker text */
-      --muted:     #6b7280;        /* Keep muted */
-      --primary:   #16a34a;        /* Brighter green from user dashboard */
-      --primary-light: #dcfce7;    /* Brighter light green */
-      --primary-dark:  #15803d;    /* Darker green */
+      --bg:        #ffffff;
+      --surface:   #ffffff;
+      --surface2:  #f3f4f6;
+      --border:    #b6b6b6;
+      --text:      #000000;
+      --muted:     #6b7280;
+      --primary:   #16a34a;
+      --primary-light: #dcfce7;
+      --primary-dark:  #15803d;
       --success:   #16a34a;
-      --danger:    #dc2626;        /* Brighter red */
-      --warn:      #d97706;        /* Brighter orange */
+      --danger:    #dc2626;
+      --warn:      #d97706;
       --event:     #006400;
 
-      /* Sizing */
-      --radius:        6px;        
+      --radius:        6px;
       --sidebar-w:     240px;
       --font:          'Arial', 'Segoe UI', system-ui, sans-serif;
       --mono:          'Courier New', monospace;
     }
 
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
-    /* ═══ BODY & LAYOUT ═══════════════════════════════════════════ */
 html { font-size: 15px; }
     body { 
       font-family: var(--font); 
@@ -365,7 +343,6 @@ html { font-size: 15px; }
     .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     .content { flex: 1; overflow-y: auto; padding: 28px 32px; background: var(--bg); }
 
-    /* ─── Sidebar ────────────────────────��──────────────────── */
     .sidebar { 
       width: var(--sidebar-w); 
       background: var(--surface); 
@@ -421,7 +398,7 @@ html { font-size: 15px; }
     }
 
     .nav-item:hover { 
-  background: rgba(22, 163, 74, 0.15);  /* More visible */
+  background: rgba(22, 163, 74, 0.15);
   border-left-color: var(--primary);
     }
 
@@ -456,8 +433,7 @@ html { font-size: 15px; }
 
     .sidebar-footer a:hover { opacity: 1; }
 
-    /* ─── Logout Button ───────────────────────────────────────────── */
-.logout-btn {
+ .logout-btn {
   background: rgba(239, 68, 68, 0.15) !important;
   color: #dc2626 !important;
   border: 1px solid rgba(239, 68, 68, 0.3);
@@ -474,7 +450,6 @@ html { font-size: 15px; }
   box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
 }
 
-    /* ─── Top bar ───────────────────────────────────────────── */
     .topbar { 
       height: 60px; 
       background: white;
@@ -524,7 +499,6 @@ html { font-size: 15px; }
       font-weight: bold;
     }
 
-    /* ═══ FLASH MESSAGES ════════════════════════════════════════ */
     .flash { 
       display: flex; 
       align-items: flex-start; 
@@ -554,7 +528,6 @@ html { font-size: 15px; }
       color: var(--danger); 
     }
 
-    /* ═══ PAGE HEADER ════════════════════════════════════════ */
     .page-header { 
       margin-bottom: 24px; 
       display: flex; 
@@ -579,7 +552,6 @@ html { font-size: 15px; }
       margin-top: 4px; 
     }
 
-    /* ═══ STAT CARDS ════════════════════════════════════════ */
     .stats-grid { 
       display: grid; 
       grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
@@ -622,7 +594,6 @@ html { font-size: 15px; }
       margin-top: 3px; 
     }
 
-    /* ═══ CARD ══════════════════════════════════════════════ */
     .card { 
       background: var(--surface); 
       border: 1px solid var(--border); 
@@ -643,7 +614,6 @@ html { font-size: 15px; }
 
     .card-title .icon { color: var(--primary); }
 
-    /* ═══ TOOLBAR ════════════════════════════════════════════ */
     .toolbar { 
       display: flex; 
       gap: 10px; 
@@ -671,7 +641,6 @@ html { font-size: 15px; }
 
     .toolbar input[type=text] { min-width: 200px; }
 
-    /* ═══ BUTTONS ════════════════════════════════════════════ */
     .btn { 
       display: inline-flex; 
       align-items: center; 
@@ -688,7 +657,7 @@ html { font-size: 15px; }
     }
 
     .btn-primary { 
-  background: #16a34a;  /* Bright green */
+  background: #16a34a;
   color: white; 
   font-weight: 700;
   box-shadow: 0 2px 8px rgba(22, 163, 74, 0.2);
@@ -732,7 +701,6 @@ html { font-size: 15px; }
 
     .btn-sm { padding: 5px 10px; font-size: .78rem; }
 
-    /* ═══ TABLE ═════════════════════════════════════════════ */
     .table-wrap { 
       overflow-x: auto; 
       border-radius: var(--radius); 
@@ -771,7 +739,6 @@ html { font-size: 15px; }
       vertical-align: middle; 
     }
 
-    /* ═══ BADGES ════════════════════════════════════════════ */
     .role-badge { 
       display: inline-block; 
       padding: 2px 10px; 
@@ -812,10 +779,14 @@ html { font-size: 15px; }
       border: 1px solid rgba(0, 100, 0, 0.25); 
     }
 
-    /* ═══ FORM ══════════════════════════════════════════════ */
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
     .form-group { display: flex; flex-direction: column; gap: 6px; }
+
+    .seat-grid-preview { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; max-width: 300px; }
+    .seat-row { display: contents; }
+    .seat-cell { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 12px 8px; text-align: center; font-size: 0.85rem; font-weight: 600; color: var(--primary); transition: all 0.2s; }
+    .seat-cell:hover { background: rgba(22, 163, 74, 0.1); border-color: var(--primary); }
     .form-group.full { grid-column: 1 / -1; }
 
     label { 
@@ -853,7 +824,6 @@ html { font-size: 15px; }
 
     .form-actions { display: flex; gap: 10px; margin-top: 20px; }
 
-    /* ═══ MODAL ═════════════════════════════════════════════ */
     .modal-overlay { 
       position: fixed; 
       inset: 0; 
@@ -908,7 +878,6 @@ html { font-size: 15px; }
 
     .modal-close:hover { color: var(--text); }
 
-    /* ═══ PAGINATION ════════════════════════════════════════ */
     .pagination { 
       display: flex; 
       gap: 6px; 
@@ -946,7 +915,6 @@ html { font-size: 15px; }
       border: 1px solid var(--primary); 
     }
 
-    /* ═══ SETTINGS ══════════════════════════════════════════ */
     .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 
     .settings-note { 
@@ -959,7 +927,6 @@ html { font-size: 15px; }
       margin-bottom: 20px; 
     }
 
-    /* ═══ EVENT CARD ════════════════════════════════════════ */
     .event-list { display: grid; gap: 14px; }
 
     .event-item { 
@@ -995,9 +962,9 @@ html { font-size: 15px; }
     .event-item-tags { display: flex; gap: 8px; flex-wrap: wrap; }
 
     .event-tag-lab { 
-      background: #d1fae5;           /* Bright light green */
-      color: #047857;                /* Dark teal text */
-      border: 1px solid #6ee7b7;     /* Bright teal border */
+      background: #d1fae5;           
+      color: #047857;                
+      border: 1px solid #6ee7b7;     
       font-weight: 600;
     }
 
@@ -1021,7 +988,6 @@ html { font-size: 15px; }
 
     .event-actions { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
 
-    /* ═══ LAB CARDS ═════════════���════════════════════════════ */
     .lab-item {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -1113,7 +1079,6 @@ html { font-size: 15px; }
       color: var(--primary);
     }
 
-    /* ═══ PLACEHOLDER ════════════════════════════════════════ */
     .placeholder-section { 
       background: var(--surface); 
       border: 1px dashed var(--border); 
@@ -1155,7 +1120,6 @@ html { font-size: 15px; }
       color: var(--primary);
     }
 
-    /* ═══ RESPONSIVE ════════════════════════════════════════ */
     @media (max-width: 768px) {
       .sidebar { width: 60px; }
       .sidebar-logo h1, .sidebar-logo span, .nav-item span, .nav-section-label, .sidebar-footer a span { display: none; }
@@ -1576,8 +1540,8 @@ html { font-size: 15px; }
           <div class="stat-card"><div class="stat-label">Lab Technicians</div><div class="stat-val"><?= $statTechs ?></div><div class="stat-sub">Active staff</div></div>
           <div class="stat-card"><div class="stat-label">Administrators</div><div class="stat-val"><?= $statAdmins ?></div><div class="stat-sub">Admin accounts</div></div>
           <div class="stat-card"><div class="stat-label">Laboratories</div><div class="stat-val"><?= $statLabs ?></div><div class="stat-sub">Registered rooms</div></div>
-          <div class="stat-card"><div class="stat-label">Scheduled Reservations</div><div class="stat-val" style="color:var(--accent2)"><?= $statRes ?></div><div class="stat-sub">Upcoming bookings</div></div>
-          <div class="stat-card"><div class="stat-label">Upcoming Events</div><div class="stat-val" style="color:var(--event)"><?= $statEvents ?></div><div class="stat-sub">Scheduled blockouts</div></div>
+          <div class="stat-card"><div class="stat-label">Reservations</div><div class="stat-val"><?= $statRes ?></div><div class="stat-sub">Upcoming bookings</div></div>
+          <div class="stat-card"><div class="stat-label">Upcoming Events</div><div class="stat-val"><?= $statEvents ?></div><div class="stat-sub">Scheduled blockouts</div></div>
         </div>
         <div class="card">
           <div class="card-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span> Quick Actions</div>
@@ -1749,36 +1713,6 @@ html { font-size: 15px; }
               </div>
             </div>
             <?php endforeach; ?>
-          </div>
- 
-          <!-- Slot grid reference card -->
-          <div class="card" style="margin-top:24px;">
-            <div class="card-title">Slot Schedule Reference</div>
-            <p style="font-size:.83rem;color:var(--muted);margin-bottom:16px;">All laboratories share the same time slot structure. Slots run every 30 minutes from 7:00 AM to 7:00 PM (24 slots per seat per day).</p>
-            <div style="overflow-x:auto;">
-              <table style="font-size: 0.9rem;">
-                <thead style="font-size: 0.8rem;">
-                  <tr>
-                    <th>Slot #</th>
-                    <?php for ($s = 0; $s < 24; $s++):
-                      $mins = (7*60) + ($s*30);
-                      $h = intdiv($mins,60); $m = $mins%60;
-                      $period = $h >= 12 ? 'PM' : 'AM';
-                      $h12 = $h % 12 ?: 12; ?>
-                      <th><?= sprintf('%d:%02d %s', $h12, $m, $period) ?></th>
-                    <?php endfor; ?>
-                  </tr>
-                </thead>
-                <tbody style="font-size: 0.85rem;">
-                  <tr>
-                    <td style="color:var(--muted);font-size:.75rem;">Index</td>
-                    <?php for ($s = 0; $s < 24; $s++): ?>
-                      <td style="text-align:center;font-family:var(--mono);font-size:.8rem;color:var(--accent);"><?= $s ?></td>
-                    <?php endfor; ?>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
           </div>
         <?php endif; ?>
 
