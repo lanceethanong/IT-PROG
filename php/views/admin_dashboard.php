@@ -1698,7 +1698,7 @@ html { font-size: 15px; }
         <?php endif; ?>
 
 
-      <!-- ═══ EVENTS (fully functional) ═══════════════════════ -->
+      <!-- ═══ EVENTS ═══════════════════════ -->
       <?php elseif ($tab === 'events'): ?>
         <div class="page-header">
           <div>
@@ -1767,7 +1767,7 @@ html { font-size: 15px; }
           </div>
         <?php endif; ?>
 
-      <!-- ═══ SETTINGS (fully functional) ════════════════════ -->
+      <!-- ═══ SETTINGS ════════════════════ -->
       <?php elseif ($tab === 'settings'): ?>
         <div class="page-header">
           <div>
