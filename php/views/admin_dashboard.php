@@ -469,6 +469,24 @@ html { font-size: 15px; }
 
     .sidebar-footer a:hover { opacity: 1; }
 
+    /* ─── Logout Button ───────────────────────────────────────────── */
+.logout-btn {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #dc2626 !important;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  padding: 8px 12px !important;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.logout-btn:hover {
+  background: #dc2626 !important;
+  color: white !important;
+  border-color: #dc2626;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
     /* ─── Top bar ───────────────────────────────────────────── */
     .topbar { 
       height: 60px; 
