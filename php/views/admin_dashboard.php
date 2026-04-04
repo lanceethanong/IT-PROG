@@ -1166,20 +1166,6 @@ for ($h = 7; $h <= 22; $h++) {
           </div>
         <?php endif; ?>
 
-        <div class="card" style="margin-top:24px;">
-          <div class="card-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg></span> How event blocking works in dashboard.php</div>
-          <p style="font-size:.83rem;color:var(--muted);line-height:1.7;">
-            In your seat-grid rendering loop in <code style="background:var(--surface2);padding:1px 5px;border-radius:4px;">dashboard.php</code>,
-            call <code style="background:var(--surface2);padding:1px 5px;border-radius:4px;">slot_is_blocked_by_event($lab['_id'], $selectedDate, $slotStart, $slotEnd)</code>
-            per cell. If it returns <code style="background:var(--surface2);padding:1px 5px;border-radius:4px;">true</code>,
-            render the cell with <code style="background:var(--surface2);padding:1px 5px;border-radius:4px;">class="unavailable"</code> and set
-            <code style="background:var(--surface2);padding:1px 5px;border-radius:4px;">data-reason="<?php echo htmlspecialchars('<?= e(slot_block_reason(...)) ?>') ?>"</code>
-            for a tooltip. The function is defined in <code style="background:var(--surface2);padding:1px 5px;border-radius:4px;">repository.php</code>
-            and uses the same half-open interval overlap logic as <code style="background:var(--surface2);padding:1px 5px;border-radius:4px;">reservation_conflicts()</code>.
-          </p>
-        </div>
-
-
       <!-- ═══ SETTINGS (fully functional) ════════════════════ -->
       <?php elseif ($tab === 'settings'): ?>
         <div class="page-header"><h2>System Settings</h2><p>Configure global behaviour rules for EZLabs.</p></div>
