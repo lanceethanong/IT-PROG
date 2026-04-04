@@ -940,7 +940,7 @@ html { font-size: 15px; }
       transition: border-color .2s;
     }
 
-    .event-item:hover { border-color: #7c3aed; }
+    .event-item:hover { border-color: #047857; }
 
     .event-item-meta { flex: 1; min-width: 0; }
 
