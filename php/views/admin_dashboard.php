@@ -324,33 +324,20 @@ for ($h = 7; $h <= 22; $h++) {
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      /* Primary brand colors 
-      --primary:       #22543d;    
-      --primary-light: #e6f4ea;    
-      --primary-dark:  #059669;    
-      
-      /* Backgrounds */
-      --bg:            #f9fafb;   
-      --surface:       #ffffff;    
-      --surface2:      #f0f0f0;    
-      
-      /* Borders & dividers */
-      --border:        #e5e7eb;    
-      
-      /* Text colors */
-      --text:          #22543d;    
-      --muted:         #6b7280;    
-      
-      /* Status colors */
-      --danger:        #f87171;    
-      --success:       #16a34a;    
-      --warn:          #fbbf24;    
-      --event:         #7c3aed;    
-      
-      /* Accent colors */
-      --accent:        #22543d;    
-      --accent2:       #059669;    
-      
+      --bg:        #ffffff;        /* Pure white instead of off-white */
+      --surface:   #ffffff;        /* Pure white */
+      --surface2:  #f3f4f6;        /* Slightly lighter gray */
+      --border:    #d1d5db;        /* Darker border for contrast */
+      --text:      #1f2937;        /* Darker text */
+      --muted:     #6b7280;        /* Keep muted */
+      --primary:   #16a34a;        /* Brighter green from user dashboard */
+      --primary-light: #dcfce7;    /* Brighter light green */
+      --primary-dark:  #15803d;    /* Darker green */
+      --success:   #16a34a;
+      --danger:    #dc2626;        /* Brighter red */
+      --warn:      #d97706;        /* Brighter orange */
+      --event:     #7c3aed;        /* Brighter purple */
+
       /* Sizing */
       --radius:        6px;        
       --sidebar-w:     240px;
@@ -434,8 +421,8 @@ html { font-size: 15px; }
     }
 
     .nav-item:hover { 
-      color: var(--text); 
-      background: rgba(34, 84, 61, 0.06); 
+  background: rgba(22, 163, 74, 0.15);  /* More visible */
+  border-left-color: var(--primary);
     }
 
     .nav-item.active { 
@@ -597,7 +584,10 @@ html { font-size: 15px; }
       transition: border-color .2s; 
     }
 
-    .stat-card:hover { border-color: var(--primary); }
+    .stat-card:hover { 
+  border-color: var(--primary);
+  background: rgba(22, 163, 74, 0.05); 
+    }
 
     .stat-label { 
       font-size: .65rem; 
@@ -686,15 +676,16 @@ html { font-size: 15px; }
     }
 
     .btn-primary { 
-      background: var(--primary); 
-      color: white; 
-      border-color: var(--primary); 
-    }
+  background: #16a34a;  /* Bright green */
+  color: white; 
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.2);
+  }
 
-    .btn-primary:hover { 
-      background: #1a3d2a;
-      opacity: 0.9;
-    }
+.btn-primary:hover { 
+  background: #15803d;  /* Darker on hover */
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+  }
 
     .btn-danger { 
       background: rgba(248, 113, 113, 0.15); 
@@ -759,7 +750,7 @@ html { font-size: 15px; }
     tbody tr { 
       border-top: 1px solid var(--border); 
       transition: background .1s; 
-    }
+    } 
 
     tbody tr:hover { background: rgba(34, 84, 61, 0.04); }
 
@@ -781,9 +772,10 @@ html { font-size: 15px; }
     }
 
     .role-Student { 
-      background: rgba(34, 84, 61, 0.15); 
-      color: var(--primary); 
-      border: 1px solid rgba(34, 84, 61, 0.3); 
+      background: #dcfce7;  
+      color: #15803d;       
+      border: 1px solid #86efac;  
+      font-weight: 600;
     }
 
     .role-Lab-Technician { 
@@ -854,8 +846,7 @@ html { font-size: 15px; }
     .modal-overlay { 
       position: fixed; 
       inset: 0; 
-      background: rgba(0, 0, 0, 0.5); 
-      backdrop-filter: blur(4px); 
+      background: rgba(0, 0, 0, 0.6); 
       z-index: 200; 
       display: none; 
       align-items: center; 
@@ -992,11 +983,11 @@ html { font-size: 15px; }
 
     .event-item-tags { display: flex; gap: 8px; flex-wrap: wrap; }
 
-    .event-tag { 
-      font-size: .72rem; 
-      padding: 2px 9px; 
-      border-radius: 99px; 
-      font-weight: 600; 
+    .event-tag-lab { 
+      background: #d1fae5;           /* Bright light green */
+      color: #047857;                /* Dark teal text */
+      border: 1px solid #6ee7b7;     /* Bright teal border */
+      font-weight: 600;
     }
 
     .event-tag-lab { 
