@@ -554,8 +554,8 @@ html { font-size: 15px; }
 
     .stats-grid { 
       display: grid; 
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
-      gap: 14px; 
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
+      gap: 18px; 
       margin-bottom: 24px; 
     }
 
@@ -563,7 +563,8 @@ html { font-size: 15px; }
       background: var(--surface); 
       border: 1px solid var(--border); 
       border-radius: var(--radius); 
-      padding: 18px 20px; 
+      padding: 24px 24px; 
+      min-height: 140px;
       transition: border-color .2s; 
     }
 
@@ -573,25 +574,25 @@ html { font-size: 15px; }
     }
 
     .stat-label { 
-      font-size: .65rem; 
+      font-size: .85rem; 
       text-transform: uppercase; 
       letter-spacing: 1.2px; 
-      color: var(--muted); 
+      color: var(--text); 
       font-weight: 600; 
     }
 
     .stat-val { 
-      font-size: 2rem; 
+      font-size: 2.4rem; 
       font-weight: 700; 
-      margin-top: 6px; 
+      margin-top: 8px; 
       font-family: var(--mono); 
       color: var(--primary); 
     }
 
     .stat-sub { 
-      font-size: .72rem; 
+      font-size: .85rem; 
       color: var(--muted); 
-      margin-top: 3px; 
+      margin-top: 4px; 
     }
 
     .card { 
