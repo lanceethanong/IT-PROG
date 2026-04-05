@@ -693,13 +693,12 @@ for ($h = 7; $h <= 22; $h++) {
           <div class="stat-card"><div class="stat-label">Laboratories</div><div class="stat-val"><?= $statLabs ?></div><div class="stat-sub">Registered rooms</div></div>
           <div class="stat-card"><div class="stat-label">Reservations</div><div class="stat-val"><?= $statRes ?></div><div class="stat-sub">Upcoming bookings</div></div>
           <div class="stat-card"><div class="stat-label">Upcoming Events</div><div class="stat-val"><?= $statEvents ?></div><div class="stat-sub">Scheduled blockouts</div></div>
-          <div class="stat-card" style="display:flex;flex-direction:column;justify-content:center;gap:12px;">
-            <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="openModal('modal-create-user')">Add User</button>
-            <button class="btn btn-event"   style="width:100%;justify-content:center;" onclick="openModal('modal-create-event')">Schedule Event</button>
-          </div>
         </div>
         <div class="card">
-          <div class="card-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> Recent Users</div>
+          <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="display:flex;align-items:center;gap:6px;"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> Recent Users</span>
+            <button class="btn btn-primary" onclick="openModal('modal-create-user')">Add User</button>
+          </div>
           <div class="table-wrap">
             <table>
               <thead><tr><th>Username</th><th>Email</th><th>Role</th><th>Created</th></tr></thead>
@@ -717,6 +716,43 @@ for ($h = 7; $h <= 22; $h++) {
                 </tr>
                 <?php endforeach; ?>
                 <?php if (empty($recent)): ?><tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted);">No users yet.</td></tr><?php endif; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="display:flex;align-items:center;gap:6px;"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> Recent Events</span>
+            <button class="btn btn-event" onclick="openModal('modal-create-event')">Schedule Event</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Event Name</th><th>Lab Used</th><th>Date</th><th>Time Slot</th></tr></thead>
+              <tbody>
+                <?php
+                  $recentEvents = array_slice(array_reverse($allEvents), 0, 6);
+                  $today = date('Y-m-d');
+                  foreach ($recentEvents as $ev):
+                    $evDate   = $ev['date'] ?? '';
+                    $evStatus = strtolower($ev['status'] ?? '');
+                    $isPast   = ($evStatus === 'concluded' || $evStatus === 'cancelled') || ($evDate && $evDate < $today);
+                    $labLabel = isset($ev['lab']) ? ($labById[(string)$ev['lab']] ?? e($ev['lab'])) : '—';
+                ?>
+                <tr>
+                  <td style="font-weight:600;"><?= e($ev['name']) ?></td>
+                  <td style="color:var(--muted);"><?= $labLabel ?></td>
+                  <td>
+                    <?php if ($isPast): ?>
+                      <span class="role-badge role-Lab-Technician" style="font-size:.72rem;">Past</span>
+                    <?php else: ?>
+                      <span style="color:var(--muted);font-size:.78rem;"><?= e($evDate) ?></span>
+                    <?php endif; ?>
+                  </td>
+                  <td style="color:var(--muted);font-size:.78rem;font-family:var(--mono);"><?= e($ev['time_start'] ?? '—') ?> – <?= e($ev['time_end'] ?? '—') ?></td>
+                </tr>
+                <?php endforeach; ?>
+                <?php if (empty($recentEvents)): ?><tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted);">No events yet.</td></tr><?php endif; ?>
               </tbody>
             </table>
           </div>
