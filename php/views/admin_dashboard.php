@@ -1136,12 +1136,7 @@ for ($h = 7; $h <= 22; $h++) {
           </div>
         </div>
 
-        <div style="display:flex;justify-content:flex-end;margin-bottom:18px;">
-          <form method="GET" action="" style="margin:0;">
-            <input type="hidden" name="tab" value="reservations" />
-            <input type="text" name="q" placeholder="Filter student username…" style="padding:8px;border-radius:6px;border:1px solid #ddd;" />
-          </form>
-        </div>
+        
 
         <div class="card">
           <div class="card-title"><span class="icon">📋</span> Current Reservations</div>
