@@ -223,3 +223,5 @@ function session_user_id(): string
 {
     return (string) ($_SESSION['user']['id'] ?? '');
 }
+
+require_once __DIR__ . '/settings.php';

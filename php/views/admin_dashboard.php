@@ -1,14 +1,12 @@
 <?php
-// ============================================================
-//  admin_dashboard.php  —  EZLabs Admin Panel
-// ============================================================
+
 
 require_once __DIR__ . '/../lib/repository.php';
 
 require_role('Admin');
 $sessionUser = $_SESSION['user'] ?? [];
 $sessionName = (string) ($sessionUser['username'] ?? '');
-$sessionId   = (string) ($sessionUser['_id']      ?? '');
+$sessionId   = session_user_id();
 
 $tab          = $_GET['tab'] ?? 'overview';
 $allowedTabs  = ['overview', 'users', 'labs', 'events', 'settings'];
@@ -56,7 +54,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pass    = trim($_POST['password'] ?? '');
 
         $existing = users_find_by_id($uid2);
-        if ($existing && $uname && $email) {
+      if ($existing && $uname && $email) {
+        // Prevent editing other Admin accounts
+        if ((string)($existing['role'] ?? '') === 'Admin' && $uid2 !== $sessionId) {
+          $_SESSION['admin_flash'] = ['type'=>'error','msg'=>'Cannot edit other admin accounts.'];
+          redirect_to('/admin_dashboard.php?tab=users');
+        }
             $updated             = $existing;
             $updated['username'] = $uname;
             $updated['email']    = $email;
@@ -74,17 +77,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'delete_user') {
-        $uid2 = trim($_POST['user_id'] ?? '');
-        if ($uid2 && $uid2 !== $sessionId) {
-            $target = users_find_by_id($uid2);
-            if ($target) {
-                users_delete_by_username((string) ($target['username'] ?? ''));
-                $_SESSION['admin_flash'] = ['type'=>'success','msg'=>'User deleted.'];
-            }
-        } else {
-            $_SESSION['admin_flash'] = ['type'=>'error','msg'=>'Cannot delete your own account.'];
+      $uid2 = trim($_POST['user_id'] ?? '');
+      if ($uid2) {
+        $target = users_find_by_id($uid2);
+        if (!$target) {
+          $_SESSION['admin_flash'] = ['type'=>'error','msg'=>'User not found.'];
+          redirect_to('/admin_dashboard.php?tab=users');
         }
-        redirect_to('/admin_dashboard.php?tab=users');
+
+        // If target is an Admin
+        if ((string)($target['role'] ?? '') === 'Admin') {
+          if ($uid2 === $sessionId) {
+            // Allow deleting your own admin account: remove user and end session
+            users_delete_by_username((string) ($target['username'] ?? ''));
+            session_destroy();
+            setcookie(session_name(), '', time() - 3600, cookie_path());
+            redirect_to('/');
+          }
+          // Prevent deleting other admins
+          $_SESSION['admin_flash'] = ['type'=>'error','msg'=>'Cannot delete other admin accounts.'];
+          redirect_to('/admin_dashboard.php?tab=users');
+        }
+
+        // Non-admin users may be deleted
+        users_delete_by_username((string) ($target['username'] ?? ''));
+        $_SESSION['admin_flash'] = ['type'=>'success','msg'=>'User deleted.'];
+      }
+      redirect_to('/admin_dashboard.php?tab=users');
     }
 
     if ($action === 'create_lab') {
@@ -215,15 +234,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'save_settings') {
-        $_SESSION['sys_settings'] = [
-            'site_name'      => trim($_POST['site_name']      ?? 'EZLabs'),
-            'grace_minutes'  => max(1, (int) ($_POST['grace_minutes']  ?? 10)),
-            'advance_days'   => max(1, (int) ($_POST['advance_days']   ?? 7)),
-            'cancel_minutes' => max(1, (int) ($_POST['cancel_minutes'] ?? 30)),
-            'max_seats'      => max(1, (int) ($_POST['max_seats']      ?? 35)),
-        ];
-        $_SESSION['admin_flash'] = ['type'=>'success','msg'=>'Settings saved.'];
-        redirect_to('/admin_dashboard.php?tab=settings');
+      $toSave = [
+        'site_name'      => trim($_POST['site_name']      ?? 'EZLabs'),
+        'grace_minutes'  => max(1, (int) ($_POST['grace_minutes']  ?? 10)),
+        'advance_days'   => max(1, (int) ($_POST['advance_days']   ?? 7)),
+        'cancel_minutes' => max(1, (int) ($_POST['cancel_minutes'] ?? 30)),
+      ];
+      save_settings($toSave);
+      $_SESSION['admin_flash'] = ['type'=>'success','msg'=>'Settings saved.'];
+      redirect_to('/admin_dashboard.php?tab=settings');
     }
 }
 
@@ -266,13 +285,14 @@ $allRes       = reservations_all();
 $statRes      = count(array_filter($allRes, fn($r) => reservation_status($r) === 'Scheduled'));
 $statEvents   = count($allEvents);
 
-$settings = $_SESSION['sys_settings'] ?? [
-    'site_name'      => 'EZLabs',
-    'grace_minutes'  => 10,
-    'advance_days'   => 7,
-    'cancel_minutes' => 30,
-    'max_seats'      => 35,
+$defaults = [
+  'site_name'      => 'EZLabs',
+  'grace_minutes'  => 10,
+  'advance_days'   => 7,
+  'cancel_minutes' => 30,
 ];
+
+$settings = array_merge($defaults, load_settings());
 
 $timeOptions = [];
 for ($h = 7; $h <= 22; $h++) {
@@ -809,16 +829,30 @@ for ($h = 7; $h <= 22; $h++) {
                     <td style="color:var(--muted);font-size:.78rem;"><?= e(substr($u['createdAt'],0,10)) ?></td>
                     <td style="text-align:right;">
                       <div style="display:flex;gap:6px;justify-content:flex-end;">
-                        <button class="btn btn-ghost btn-sm" onclick="openEditUserModal(
-                          '<?= e(addslashes($u['_id'])) ?>',
-                          '<?= e(addslashes($u['username'])) ?>',
-                          '<?= e(addslashes($u['email'])) ?>',
-                          '<?= e(addslashes($u['role'])) ?>'
-                        )">Edit</button>
-                        <?php if ($u['_id'] !== $sessionId): ?>
+                        <?php if ($u['_id'] === $sessionId): ?>
+                          <!-- Current admin: can edit and delete own account -->
+                          <button class="btn btn-ghost btn-sm" onclick="openEditUserModal(
+                            '<?= e(addslashes($u['_id'])) ?>',
+                            '<?= e(addslashes($u['username'])) ?>',
+                            '<?= e(addslashes($u['email'])) ?>',
+                            '<?= e(addslashes($u['role'])) ?>'
+                          )">Edit</button>
                           <button class="btn btn-danger btn-sm" onclick="openDeleteUserModal('<?= e($u['_id']) ?>')">Delete</button>
                         <?php else: ?>
-                          <button class="btn btn-danger btn-sm" disabled style="opacity:.4;" title="Cannot delete yourself">Delete</button>
+                          <?php if ((string)($u['role'] ?? '') === 'Admin'): ?>
+                            <!-- Other admins: cannot be edited or deleted -->
+                            <button class="btn btn-ghost btn-sm" disabled title="Cannot edit other admin accounts" style="opacity:.5;">Edit</button>
+                            <button class="btn btn-danger btn-sm" disabled title="Cannot delete other admin accounts" style="opacity:.5;">Delete</button>
+                          <?php else: ?>
+                            <!-- Non-admin users: normal actions -->
+                            <button class="btn btn-ghost btn-sm" onclick="openEditUserModal(
+                              '<?= e(addslashes($u['_id'])) ?>',
+                              '<?= e(addslashes($u['username'])) ?>',
+                              '<?= e(addslashes($u['email'])) ?>',
+                              '<?= e(addslashes($u['role'])) ?>'
+                            )">Edit</button>
+                            <button class="btn btn-danger btn-sm" onclick="openDeleteUserModal('<?= e($u['_id']) ?>')">Delete</button>
+                          <?php endif; ?>
                         <?php endif; ?>
                       </div>
                     </td>
@@ -988,11 +1022,6 @@ for ($h = 7; $h <= 22; $h++) {
             <input type="hidden" name="_action" value="save_settings" />
             <div class="settings-grid">
               <div class="form-group">
-                <label>Max Seats per Lab</label>
-                <input class="form-control" type="number" name="max_seats" value="<?= (int)$settings['max_seats'] ?>" min="1" max="200" required />
-                <span class="form-hint">Default seat count when creating a new lab.</span>
-              </div>
-              <div class="form-group">
                 <label>Advance Booking Window (days)</label>
                 <input class="form-control" type="number" name="advance_days" value="<?= (int)$settings['advance_days'] ?>" min="1" max="30" required />
                 <span class="form-hint">Students can reserve up to this many days in advance.</span>
@@ -1020,7 +1049,7 @@ for ($h = 7; $h <= 22; $h++) {
             <table>
               <thead><tr><th>Setting</th><th>Current Value</th></tr></thead>
               <tbody>
-                <tr><td>Max Seats per Lab</td><td style="font-family:var(--mono);color:var(--accent);"><?= (int)$settings['max_seats'] ?></td></tr>
+                <!-- Max seats removed (fixed 7x5 grid). -->
                 <tr><td>Advance Booking</td>  <td style="font-family:var(--mono);color:var(--accent);"><?= (int)$settings['advance_days'] ?> days</td></tr>
                 <tr><td>Cancel Cutoff</td>    <td style="font-family:var(--mono);color:var(--accent);"><?= (int)$settings['cancel_minutes'] ?> minutes</td></tr>
                 <tr><td>No-show Grace</td>    <td style="font-family:var(--mono);color:var(--accent);"><?= (int)$settings['grace_minutes'] ?> minutes</td></tr>
