@@ -709,10 +709,10 @@ for ($h = 7; $h <= 22; $h++) {
                     $rc = 'role-' . str_replace(' ','-', $u['role']);
                 ?>
                 <tr>
-                  <td style="font-weight:600;"><?= e($u['username']) ?></td>
-                  <td style="color:var(--muted);"><?= e($u['email']) ?></td>
+                  <td style="font-weight:700;font-size:.9rem;color:var(--text);"><?= e($u['username']) ?></td>
+                  <td style="font-size:.875rem;color:var(--text);"><?= e($u['email']) ?></td>
                   <td><span class="role-badge <?= e($rc) ?>"><?= e($u['role']) ?></span></td>
-                  <td style="color:var(--muted);font-size:.78rem;"><?= e(substr($u['createdAt'],0,10)) ?></td>
+                  <td style="font-size:.84rem;color:var(--text);font-family:var(--mono);"><?= e(substr($u['createdAt'],0,10)) ?></td>
                 </tr>
                 <?php endforeach; ?>
                 <?php if (empty($recent)): ?><tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted);">No users yet.</td></tr><?php endif; ?>
@@ -740,16 +740,16 @@ for ($h = 7; $h <= 22; $h++) {
                     $labLabel = isset($ev['lab']) ? ($labById[(string)$ev['lab']] ?? e($ev['lab'])) : '—';
                 ?>
                 <tr>
-                  <td style="font-weight:600;"><?= e($ev['name']) ?></td>
-                  <td style="color:var(--muted);"><?= $labLabel ?></td>
+                  <td style="font-weight:700;font-size:.9rem;color:var(--text);"><?= e($ev['name']) ?></td>
+                  <td style="font-size:.875rem;color:var(--primary);font-weight:600;"><?= $labLabel ?></td>
                   <td>
                     <?php if ($isPast): ?>
-                      <span class="role-badge role-Lab-Technician" style="font-size:.72rem;">Past</span>
+                      <span style="display:inline-block;padding:2px 10px;border-radius:99px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;background:rgba(107,114,128,.12);color:#4b5563;border:1px solid rgba(107,114,128,.3);">Past</span>
                     <?php else: ?>
-                      <span style="color:var(--muted);font-size:.78rem;"><?= e($evDate) ?></span>
+                      <span style="font-size:.84rem;color:var(--text);font-family:var(--mono);font-weight:600;"><?= e($evDate) ?></span>
                     <?php endif; ?>
                   </td>
-                  <td style="color:var(--muted);font-size:.78rem;font-family:var(--mono);"><?= e($ev['time_start'] ?? '—') ?> – <?= e($ev['time_end'] ?? '—') ?></td>
+                  <td style="font-size:.84rem;color:var(--text);font-family:var(--mono);font-weight:500;"><?= e($ev['time_start'] ?? '—') ?> – <?= e($ev['time_end'] ?? '—') ?></td>
                 </tr>
                 <?php endforeach; ?>
                 <?php if (empty($recentEvents)): ?><tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted);">No events yet.</td></tr><?php endif; ?>
