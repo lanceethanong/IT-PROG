@@ -9,7 +9,7 @@ $sessionName = (string) ($sessionUser['username'] ?? '');
 $sessionId   = session_user_id();
 
 $tab          = $_GET['tab'] ?? 'overview';
-$allowedTabs  = ['overview', 'users', 'labs', 'events', 'settings'];
+$allowedTabs  = ['overview', 'users', 'labs', 'events', 'reservations', 'settings'];
 if (!in_array($tab, $allowedTabs, true)) $tab = 'overview';
 
 $flash = $_SESSION['admin_flash'] ?? null;
@@ -240,11 +240,86 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'advance_days'   => max(1, (int) ($_POST['advance_days']   ?? 7)),
         'cancel_minutes' => max(1, (int) ($_POST['cancel_minutes'] ?? 30)),
       ];
-      save_settings($toSave);
-      $_SESSION['admin_flash'] = ['type'=>'success','msg'=>'Settings saved.'];
-      redirect_to('/admin_dashboard.php?tab=settings');
+        save_settings($toSave);
+        $_SESSION['admin_flash'] = ['type'=>'success','msg'=>'Settings saved.'];
+        redirect_to('/admin_dashboard.php?tab=settings');
     }
 }
+
+    // Admin reservation actions (edit/delete) handled here so Admins can CRUD all upcoming reservations
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      $action = $_POST['_action'] ?? '';
+
+      if ($action === 'admin_delete_reservation') {
+        $reservationId = trim((string) ($_POST['reservation_id'] ?? ''));
+        if ($reservationId !== '') {
+          $res = reservations_find_by_id($reservationId);
+          if ($res !== null && reservation_can_delete_technician($res)) {
+            reservations_delete($reservationId);
+            $_SESSION['admin_flash'] = ['type' => 'success', 'msg' => 'Reservation deleted.'];
+          } else {
+            $_SESSION['admin_flash'] = ['type' => 'error', 'msg' => 'Reservation cannot be deleted (past or protected).'];
+          }
+        }
+        redirect_to('/admin_dashboard.php?tab=reservations');
+      }
+
+      if ($action === 'admin_edit_reservation') {
+        $reservationId = trim((string) ($_POST['reservation_id'] ?? ''));
+        $reservation = $reservationId !== '' ? reservations_find_by_id($reservationId) : null;
+        if ($reservation === null) {
+          $_SESSION['admin_flash'] = ['type' => 'error', 'msg' => 'Reservation not found.'];
+          redirect_to('/admin_dashboard.php?tab=reservations');
+        }
+
+        if (!reservation_can_edit_technician($reservation)) {
+          $_SESSION['admin_flash'] = ['type' => 'error', 'msg' => 'Reservation cannot be edited (past).'];
+          redirect_to('/admin_dashboard.php?tab=reservations');
+        }
+
+        $date = format_manila_date((string) ($_POST['date'] ?? reservation_date_only($reservation)));
+        $timeStart = (string) ($_POST['time_start'] ?? (string) ($reservation['time_start'] ?? ''));
+        $timeEnd = (string) ($_POST['time_end'] ?? (string) ($reservation['time_end'] ?? ''));
+        $row = (int) ($_POST['row'] ?? 1);
+        $column = (int) ($_POST['column'] ?? 1);
+        $labNumber = (int) ($_POST['lab_number'] ?? 0);
+        $lab = labs_find_by_number($labNumber);
+
+        if ($lab === null || $date === '' || $row < 1 || $row > 7 || $column < 1 || $column > 5 || parse_time_to_minutes($timeEnd) <= parse_time_to_minutes($timeStart)) {
+          $_SESSION['admin_flash'] = ['type' => 'error', 'msg' => 'Invalid input for reservation update.'];
+          redirect_to('/admin_dashboard.php?tab=reservations');
+        }
+
+        $candidate = [
+          'lab' => (string) ($lab['_id'] ?? ''),
+          'date' => $date,
+          'time_start' => $timeStart,
+          'time_end' => $timeEnd,
+        ];
+        $candidateSeats = [['row' => $row, 'column' => $column]];
+
+        if (reservation_conflicts($candidate, $candidateSeats, $reservationId)) {
+          $_SESSION['admin_flash'] = ['type' => 'error', 'msg' => 'Reservation conflicts with existing bookings.'];
+          redirect_to('/admin_dashboard.php?tab=reservations');
+        }
+
+        $all = reservations_all();
+        foreach ($all as $i => $item) {
+          if ((string) ($item['_id'] ?? '') !== $reservationId) continue;
+          $item['date'] = $date;
+          $item['time_start'] = $timeStart;
+          $item['time_end'] = $timeEnd;
+          $item['lab'] = (string) ($lab['_id'] ?? '');
+          $item['updatedAt'] = now_iso();
+          $all[$i] = $item;
+          break;
+        }
+        reservations_save($all);
+        seats_replace_for_reservation($reservationId, $candidateSeats);
+        $_SESSION['admin_flash'] = ['type' => 'success', 'msg' => 'Reservation updated.'];
+        redirect_to('/admin_dashboard.php?tab=reservations');
+      }
+    }
 
 
 $search     = trim($_GET['q']           ?? '');
@@ -284,6 +359,54 @@ $statLabs     = count($allLabs);
 $allRes       = reservations_all();
 $statRes      = count(array_filter($allRes, fn($r) => reservation_status($r) === 'Scheduled'));
 $statEvents   = count($allEvents);
+
+// Build combined reservation rows for admin view
+$combined = [];
+foreach (reservations_all() as $reservation) {
+  $student = users_find_by_id((string) ($reservation['user'] ?? ''));
+  $lab = labs_find_by_id((string) ($reservation['lab'] ?? ''));
+  if ($student === null || $lab === null) {
+    continue;
+  }
+
+  $status = reservation_status($reservation);
+  $seats = seats_for_reservation((string) ($reservation['_id'] ?? ''));
+  if ($seats === []) {
+    $seats = [['row' => 0, 'column' => 0]];
+  }
+
+  foreach ($seats as $seat) {
+    $combined[] = [
+      '_id' => (string) ($reservation['_id'] ?? ''),
+      'row' => (int) ($seat['row'] ?? 0),
+      'column' => (int) ($seat['column'] ?? 0),
+      'student' => (string) ($student['username'] ?? ''),
+      'lab' => 'Lab ' . $lab['number'] . ' (' . $lab['class'] . ')',
+      'time_start' => (string) ($reservation['time_start'] ?? ''),
+      'time_end' => (string) ($reservation['time_end'] ?? ''),
+      'date' => reservation_date_only($reservation),
+      'createdAt' => (string) ($reservation['createdAt'] ?? ''),
+      'status' => $status,
+      'cancel_reason' => (string) ($reservation['cancel_reason'] ?? ''),
+      'showDelete' => reservation_show_delete($reservation),
+      'isPast' => in_array($status, ['Completed', 'Cancelled'], true),
+      'canEdit' => reservation_can_edit_technician($reservation),
+      'canDelete' => reservation_can_delete_technician($reservation),
+    ];
+  }
+}
+
+usort($combined, static fn(array $a, array $b): int => strcmp((string) ($b['createdAt'] ?? ''), (string) ($a['createdAt'] ?? '')));
+
+$currentReservations = [];
+$pastReservations = [];
+foreach ($combined as $row) {
+  if (in_array((string) ($row['status'] ?? ''), ['Completed', 'Cancelled'], true)) {
+    $pastReservations[] = $row;
+  } else {
+    $currentReservations[] = $row;
+  }
+}
 
 $defaults = [
   'site_name'      => 'EZLabs',
@@ -668,6 +791,7 @@ for ($h = 7; $h <= 22; $h++) {
       <a href="?tab=users"    class="nav-item <?= $tab==='users'?'active':'' ?>"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span>Users</span></a>
       <a href="?tab=labs"     class="nav-item <?= $tab==='labs'?'active':'' ?>"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg></span><span>Labs &amp; Slots</span></a>
       <a href="?tab=events"   class="nav-item <?= $tab==='events'?'active':'' ?>"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span>Events</span></a>
+      <a href="?tab=reservations" class="nav-item <?= $tab==='reservations'?'active':'' ?>"><span class="icon">📋</span><span>Reservations</span></a>
       <div class="nav-section-label">System</div>
       <a href="?tab=settings" class="nav-item <?= $tab==='settings'?'active':'' ?>"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span>Settings</span></a>
     </nav>
@@ -997,6 +1121,142 @@ for ($h = 7; $h <= 22; $h++) {
           </div>
         <?php endif; ?>
 
+      <?php elseif ($tab === 'reservations'): ?>
+        <div class="page-header">
+          <div>
+            <h2>All Reservations</h2>
+            <p>View and manage all upcoming reservations made by students or technicians.</p>
+          </div>
+          <div class="page-header-user">
+            <span class="topbar-badge">Admin</span>
+            <div class="topbar-user">
+              <div class="topbar-avatar"><?= strtoupper(substr($sessionName,0,1)) ?></div>
+              <span><?= e($sessionName) ?></span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;margin-bottom:18px;">
+          <form method="GET" action="" style="margin:0;">
+            <input type="hidden" name="tab" value="reservations" />
+            <input type="text" name="q" placeholder="Filter student username…" style="padding:8px;border-radius:6px;border:1px solid #ddd;" />
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">📋</span> Current Reservations</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Student</th><th>Lab</th><th>Date</th><th>Time</th><th>Seat</th><th style="text-align:right;">Actions</th></tr></thead>
+              <tbody>
+                <?php if (empty($currentReservations)): ?>
+                  <tr><td colspan="6" style="text-align:center;padding:18px;color:var(--muted);">No current reservations.</td></tr>
+                <?php else: ?>
+                  <?php foreach ($currentReservations as $r): ?>
+                    <tr>
+                      <td style="font-weight:600;"><?= e($r['student']) ?></td>
+                      <td style="color:var(--primary);font-weight:600;"><?= e($r['lab']) ?></td>
+                      <td style="font-family:var(--mono);"><?= e($r['date']) ?></td>
+                      <td style="font-family:var(--mono);"><?= e($r['time_start']) ?> – <?= e($r['time_end']) ?></td>
+                      <td><?= (int)$r['row'] ?>–<?= (int)$r['column'] ?></td>
+                      <td style="text-align:right;">
+                        <?php if ($r['canEdit']): ?>
+                          <button class="btn btn-ghost btn-sm" onclick="openEditReservationModal('<?= e($r['_id']) ?>','<?= e($r['lab']) ?>','<?= e($r['date']) ?>','<?= e($r['time_start']) ?>','<?= e($r['time_end']) ?>','<?= (int)$r['row'] ?>','<?= (int)$r['column'] ?>')">Edit</button>
+                        <?php else: ?>
+                          <button class="btn btn-ghost btn-sm" disabled>Edit</button>
+                        <?php endif; ?>
+                        <?php if ($r['canDelete']): ?>
+                          <form method="POST" action="?tab=reservations" style="display:inline;margin-left:8px;">
+                            <input type="hidden" name="_action" value="admin_delete_reservation" />
+                            <input type="hidden" name="reservation_id" value="<?= e($r['_id']) ?>" />
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                          </form>
+                        <?php else: ?>
+                          <button class="btn btn-danger btn-sm" disabled style="margin-left:8px;">Delete</button>
+                        <?php endif; ?>
+                      </td>
+                    </tr>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:14px;">
+          <div class="card-title"><span class="icon">📚</span> Past Reservations</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Student</th><th>Lab</th><th>Date</th><th>Time</th><th>Seat</th><th style="text-align:right;">Status</th></tr></thead>
+              <tbody>
+                <?php if (empty($pastReservations)): ?>
+                  <tr><td colspan="6" style="text-align:center;padding:18px;color:var(--muted);">No past reservations.</td></tr>
+                <?php else: ?>
+                  <?php foreach ($pastReservations as $r): ?>
+                    <tr>
+                      <td style="font-weight:600;"><?= e($r['student']) ?></td>
+                      <td style="color:var(--primary);font-weight:600;"><?= e($r['lab']) ?></td>
+                      <td style="font-family:var(--mono);"><?= e($r['date']) ?></td>
+                      <td style="font-family:var(--mono);"><?= e($r['time_start']) ?> – <?= e($r['time_end']) ?></td>
+                      <td><?= (int)$r['row'] ?>–<?= (int)$r['column'] ?></td>
+                      <td style="text-align:right;color:var(--muted);"><?= e($r['status']) ?></td>
+                    </tr>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Edit Reservation Modal -->
+        <div class="modal-overlay" id="modal-edit-reservation-admin">
+          <div class="modal">
+            <div class="modal-header"><h3>Edit Reservation</h3><button class="modal-close" onclick="closeModal('modal-edit-reservation-admin')">&times;</button></div>
+            <form method="POST" action="?tab=reservations">
+              <input type="hidden" name="_action" value="admin_edit_reservation" />
+              <input type="hidden" name="reservation_id" id="admin-edit-res-id" />
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Lab</label>
+                  <select class="form-control" name="lab_number" id="admin-edit-lab">
+                    <?php foreach ($allLabs as $lab): ?>
+                      <option value="<?= (int)$lab['number'] ?>"><?= 'Lab ' . (int)$lab['number'] . ' (' . e($lab['class']) . ')' ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Date</label>
+                  <input class="form-control" type="date" name="date" id="admin-edit-date" required />
+                </div>
+                <div class="form-group">
+                  <label>Start</label>
+                  <select class="form-control" name="time_start" id="admin-edit-start">
+                    <?php foreach ($timeOptions as $t): ?><option><?= e($t) ?></option><?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>End</label>
+                  <select class="form-control" name="time_end" id="admin-edit-end">
+                    <?php foreach ($timeOptions as $t): ?><option><?= e($t) ?></option><?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Row</label>
+                  <input class="form-control" type="number" name="row" id="admin-edit-row" min="1" max="7" required />
+                </div>
+                <div class="form-group">
+                  <label>Column</label>
+                  <input class="form-control" type="number" name="column" id="admin-edit-column" min="1" max="5" required />
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <button type="button" class="btn btn-ghost" onclick="closeModal('modal-edit-reservation-admin')">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
       <?php elseif ($tab === 'settings'): ?>
         <div class="page-header">
           <div>
@@ -1123,6 +1383,29 @@ function openEditEventModal(id, labId, name, desc, date, tStart, tEnd) {
 function openDeleteEventModal(id) {
   document.getElementById('delete-event-id').value = id;
   openModal('modal-delete-event');
+}
+
+function openEditReservationModal(id, labLabel, date, tStart, tEnd, row, column) {
+  document.getElementById('admin-edit-res-id').value = id;
+  // select lab by matching label (Lab N (CLASS)) — fall back to first
+  var labSel = document.getElementById('admin-edit-lab');
+  for (var i = 0; i < labSel.options.length; i++) {
+    if (labSel.options[i].text === labLabel) { labSel.selectedIndex = i; break; }
+  }
+  document.getElementById('admin-edit-date').value = date;
+
+  function setSelect(id, val) {
+    var s = document.getElementById(id);
+    for (var j = 0; j < s.options.length; j++) {
+      if (s.options[j].value === val) { s.selectedIndex = j; return; }
+    }
+    for (var j = 0; j < s.options.length; j++) { if (s.options[j].text === val) { s.selectedIndex = j; return; } }
+  }
+  setSelect('admin-edit-start', tStart);
+  setSelect('admin-edit-end', tEnd);
+  document.getElementById('admin-edit-row').value = row;
+  document.getElementById('admin-edit-column').value = column;
+  openModal('modal-edit-reservation-admin');
 }
 
 (function() {
