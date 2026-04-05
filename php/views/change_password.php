@@ -6,6 +6,11 @@
   <title>Change Password - LabSlot</title>
   <link rel="stylesheet" href="/public/css/dashboard.css" />
   <link rel="stylesheet" href="/public/css/profile.css" />
+  <style>
+    .about-section .form-group { position: relative; margin-bottom: 1.25rem; }
+    .about-section input[type=password],
+    .about-section input[type=text] { width: 100%; box-sizing: border-box; }
+  </style>
 </head>
 <body data-role="<?= e($role) ?>" data-username="<?= e($username) ?>">
   <div class="dashboard-layout">
@@ -16,7 +21,7 @@
         <section class="profile-section">
           <div class="about-section" style="max-width: 520px;">
             <h3>Change Password</h3>
-            <form method="POST" action="/account/change-password">
+            <form method="POST" action="/account/change-password" novalidate>
               <div class="form-group">
                 <label for="currentPassword">Current Password</label>
                 <input id="currentPassword" type="password" name="currentPassword" required />
@@ -37,5 +42,6 @@
     </div>
     <?php include __DIR__ . '/partials/footer.php'; ?>
   </div>
+  <script src="/public/javascript/validation.js"></script>
 </body>
 </html>

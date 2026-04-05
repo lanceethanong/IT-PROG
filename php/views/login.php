@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login - LabSlot</title>
   <link rel="stylesheet" href="/public/css/signin.css" />
+  <style>
+    .form-group { position: relative; margin-bottom: 1.25rem; }
+    input[type=password], input[type=text], input[type=email] { width: 100%; box-sizing: border-box; }
+  </style>
 </head>
 <body>
   <div class="login-auth-wrapper">
@@ -16,7 +20,7 @@
       <?php if (!empty($loginSuccess)): ?>
         <p style="color: green;"><?= e($loginSuccess) ?></p>
       <?php endif; ?>
-      <form action="/login" method="POST" id="login-form">
+      <form action="/login" method="POST" id="login-form" novalidate>
         <div class="form-group">
           <label for="email">Email</label><br />
           <input type="email" id="email" name="email" required />
@@ -43,6 +47,6 @@
       </form>
     </div>
   </div>
-  
+  <script src="/public/javascript/validation.js"></script>
 </body>
 </html>
