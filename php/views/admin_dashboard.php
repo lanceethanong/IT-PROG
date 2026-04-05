@@ -1498,22 +1498,16 @@ html { font-size: 15px; }
             </div>
           </div>
         </div>
-        <div class="stats-grid">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:18px;margin-bottom:24px;align-items:stretch;">
           <div class="stat-card"><div class="stat-label">Students</div><div class="stat-val"><?= $statStudents ?></div><div class="stat-sub">Registered accounts</div></div>
           <div class="stat-card"><div class="stat-label">Lab Technicians</div><div class="stat-val"><?= $statTechs ?></div><div class="stat-sub">Active staff</div></div>
           <div class="stat-card"><div class="stat-label">Administrators</div><div class="stat-val"><?= $statAdmins ?></div><div class="stat-sub">Admin accounts</div></div>
           <div class="stat-card"><div class="stat-label">Laboratories</div><div class="stat-val"><?= $statLabs ?></div><div class="stat-sub">Registered rooms</div></div>
           <div class="stat-card"><div class="stat-label">Reservations</div><div class="stat-val"><?= $statRes ?></div><div class="stat-sub">Upcoming bookings</div></div>
           <div class="stat-card"><div class="stat-label">Upcoming Events</div><div class="stat-val"><?= $statEvents ?></div><div class="stat-sub">Scheduled blockouts</div></div>
-        </div>
-        <div class="card">
-          <div class="card-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span> Quick Actions</div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;">
-            <button class="btn btn-primary" onclick="openModal('modal-create-user')">Add User</button>
-            <button class="btn btn-event"   onclick="openModal('modal-create-event')">Schedule Event</button>
-            <a class="btn btn-ghost" href="?tab=users">Manage Users</a>
-            <a class="btn btn-ghost" href="?tab=events">All Events</a>
-            <a class="btn btn-ghost" href="?tab=settings">Settings</a>
+          <div class="stat-card" style="display:flex;flex-direction:column;justify-content:center;gap:12px;">
+            <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="openModal('modal-create-user')">Add User</button>
+            <button class="btn btn-event"   style="width:100%;justify-content:center;" onclick="openModal('modal-create-event')">Schedule Event</button>
           </div>
         </div>
         <div class="card">
@@ -1653,7 +1647,6 @@ html { font-size: 15px; }
         <?php else: ?>
           <div class="lab-list">
             <?php foreach ($allLabs as $lab):
-              // Count reservations for this lab
               $labResCount = count(array_filter($allRes, fn($r) => (string)($r['lab']??'') === (string)$lab['_id'] && reservation_status($r) === 'Scheduled'));
               $labEventCount = count(array_filter($allEvents, fn($e) => (string)($e['lab']??'') === (string)$lab['_id']));
             ?>
@@ -1890,4 +1883,4 @@ function openDeleteEventModal(id) {
 })();
 </script>
 </body>
-</html> 
+</html>
