@@ -1,9 +1,6 @@
 <?php
 // ============================================================
-//  admin_dashboard.php  —  EZLabs Admin Control Panel
-//  Requires: repository.php (which includes bootstrap.php)
-//  The events table + cancel_reason column are auto-created
-//  on first load via events_table_ensure() inside db().
+//  admin_dashboard.php  —  EZLabs Admin Panel
 // ============================================================
 
 require_once __DIR__ . '/../lib/repository.php';
