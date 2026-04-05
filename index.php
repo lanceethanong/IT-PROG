@@ -842,46 +842,61 @@ if ($method === 'POST' && $path === '/dashboard/reserve') {
         }
     }
 
-    $allSlots = array_map(static fn(array $x): int => (int) $x['slot'], $slotData);
-    $globalStartSlot = min($allSlots);
-    $globalEndSlot = max($allSlots) + 1;
-    $timeStart = slot_index_to_time($globalStartSlot);
-    $timeEnd = slot_index_to_time($globalEndSlot);
-
-    $candidateSeats = [];
-    foreach (array_keys($seatGroups) as $seatKey) {
-        [$r, $c] = array_map('intval', explode('_', $seatKey));
-        $candidateSeats[] = ['row' => $r, 'column' => $c];
-    }
-
-    $candidate = [
-        'lab' => (string) ($lab['_id'] ?? ''),
-        'date' => $date,
-        'time_start' => $timeStart,
-        'time_end' => $timeEnd,
-    ];
-
-    if (reservation_conflicts($candidate, $candidateSeats)) {
-        redirect_to('/dashboard/' . $rolePath . '?' . $baseQuery . '&reserveError=' . rawurlencode('Seat is already reserved for that time range.'));
-    }
-
-    $reservation = [
-        '_id' => new_id(),
-        'time_start' => $timeStart,
-        'time_end' => $timeEnd,
-        'user' => (string) ($targetUser['_id'] ?? ''),
-        'lab' => (string) ($lab['_id'] ?? ''),
-        'date' => $date,
-        'anonymity' => $anonymity,
-        'status' => 'Scheduled',
-        'createdAt' => now_iso(),
-        'updatedAt' => now_iso(),
-    ];
-
+    // Create individual reservations for each seat with its own time range
+    // This allows flexibility (different seats at different times) while keeping dashboard accurate
     $all = reservations_all();
-    $all[] = $reservation;
+    $seatReservationMap = [];
+    foreach ($seatGroups as $seatKey => $slots) {
+        [$r, $c] = array_map('intval', explode('_', $seatKey));
+        
+        // Calculate time range for this specific seat
+        sort($slots);
+        $startSlot = min($slots);
+        $endSlot = max($slots) + 1;
+        $seatTimeStart = slot_index_to_time($startSlot);
+        $seatTimeEnd = slot_index_to_time($endSlot);
+        
+        // Check conflicts for this seat at this time
+        $candidate = [
+            'lab' => (string) ($lab['_id'] ?? ''),
+            'date' => $date,
+            'time_start' => $seatTimeStart,
+            'time_end' => $seatTimeEnd,
+        ];
+        
+        if (reservation_conflicts($candidate, [['row' => $r, 'column' => $c]])) {
+            redirect_to('/dashboard/' . $rolePath . '?' . $baseQuery . '&reserveError=' . rawurlencode('Seat ' . seat_number_from_row_col($r, $c) . ' is already reserved for that time range.'));
+        }
+        
+        // Create individual reservation for this seat
+        $reservationId = new_id();
+        $seatReservationMap[$seatKey] = $reservationId;
+        $reservation = [
+            '_id' => $reservationId,
+            'time_start' => $seatTimeStart,
+            'time_end' => $seatTimeEnd,
+            'user' => (string) ($targetUser['_id'] ?? ''),
+            'lab' => (string) ($lab['_id'] ?? ''),
+            'date' => $date,
+            'anonymity' => $anonymity,
+            'status' => 'Scheduled',
+            'createdAt' => now_iso(),
+            'updatedAt' => now_iso(),
+        ];
+        
+        $all[] = $reservation;
+    }
+
     reservations_save($all);
-    seats_replace_for_reservation((string) $reservation['_id'], $candidateSeats);
+
+    // Link each seat to its explicitly created reservation
+    foreach ($seatGroups as $seatKey => $slots) {
+        [$r, $c] = array_map('intval', explode('_', $seatKey));
+        $reservationId = $seatReservationMap[$seatKey] ?? null;
+        if ($reservationId !== null) {
+            seats_replace_for_reservation($reservationId, [['row' => $r, 'column' => $c]]);
+        }
+    }
 
     if ($role === 'Lab Technician') {
         redirect_to('/dashboard/technician/reservation-list?username=' . rawurlencode($username));

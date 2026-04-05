@@ -568,7 +568,17 @@ function reservations_save(array $reservations): void
 {
     $pdo = db();
     $pdo->beginTransaction();
+
+    // Preserve existing seat assignments for reservations that still exist.
+    $existingSeats = seats_all();
+    $reservationIds = [];
+    foreach ($reservations as $reservation) {
+        $reservationIds[(string) ($reservation['_id'] ?? '')] = true;
+    }
+
+    $pdo->exec('DELETE FROM seat_lists');
     $pdo->exec('DELETE FROM reservations');
+
     $stmt = $pdo->prepare('INSERT INTO reservations (id, time_start, time_end, user_id, lab_id, date, anonymity, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
     foreach ($reservations as $r) {
         $stmt->execute([
@@ -584,6 +594,22 @@ function reservations_save(array $reservations): void
             dt_to_db((string) ($r['updatedAt'] ?? now_iso())),
         ]);
     }
+
+    $seatStmt = $pdo->prepare('INSERT INTO seat_lists (id, reservation_id, row_num, col_num, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)');
+    foreach ($existingSeats as $seat) {
+        if (!isset($reservationIds[(string) ($seat['reservation'] ?? '')])) {
+            continue;
+        }
+        $seatStmt->execute([
+            (string) ($seat['_id']         ?? new_id()),
+            (string) ($seat['reservation'] ?? ''),
+            (int)    ($seat['row']         ?? 0),
+            (int)    ($seat['column']      ?? 0),
+            dt_to_db((string) ($seat['createdAt'] ?? now_iso())),
+            dt_to_db((string) ($seat['updatedAt'] ?? now_iso())),
+        ]);
+    }
+
     $pdo->commit();
 }
 
