@@ -20,9 +20,6 @@ if (!in_array($tab, $allowedTabs, true)) $tab = 'overview';
 $flash = $_SESSION['admin_flash'] ?? null;
 unset($_SESSION['admin_flash']);
 
-// ═══════════════════════════════════════════════════════════════
-//  POST HANDLERS
-// ═══════════════════════════════════════════════════════════════
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['_action'] ?? '';
 
@@ -233,11 +230,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  FETCH DATA
-// ═══════════════════════════════════════════════════════════════
 
-// ── Users list ───────────────────────────────────────────────
 $search     = trim($_GET['q']           ?? '');
 $roleFilter = trim($_GET['role_filter'] ?? '');
 $page       = max(1, (int) ($_GET['p'] ?? 1));
@@ -259,10 +252,10 @@ $totalPages = max(1, (int) ceil($totalUsers / $perPage));
 $page       = min($page, $totalPages);
 $users      = array_slice($filtered, ($page - 1) * $perPage, $perPage);
 
-// ── Events list ──────────────────────────────────────────────
+
 $allEvents  = events_all();
 $allLabs    = labs_all();
-// Build lab lookup: id => label
+
 $labById = [];
 foreach ($allLabs as $l) {
     $labById[(string)$l['_id']] = 'Lab ' . $l['number'] . ' (' . $l['class'] . ')';
@@ -1115,9 +1108,7 @@ html { font-size: 15px; }
 </head>
 <body>
 
-<!-- ════════════════════════════════════════════════════════════
-     MODALS — Users
-════════════════════════════════════════════════════════════ -->
+
 
 <!-- Create User -->
 <div class="modal-overlay" id="modal-create-user">
@@ -1158,7 +1149,7 @@ html { font-size: 15px; }
   </div>
 </div>
 
-<!-- Edit User -->
+
 <div class="modal-overlay" id="modal-edit-user">
   <div class="modal">
     <div class="modal-header">
@@ -1198,7 +1189,7 @@ html { font-size: 15px; }
   </div>
 </div>
 
-<!-- Delete User -->
+
 <div class="modal-overlay" id="modal-delete-user">
   <div class="modal" style="max-width:400px;text-align:center;">
     <div style="display:flex;justify-content:center;margin-bottom:12px;"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
@@ -1217,9 +1208,7 @@ html { font-size: 15px; }
   </div>
 </div>
 
-<!-- ════════════════════════════════════════════════════
-     MODALS — Labs
-════════════════════════════════════════════════════ -->
+
 <div class="modal-overlay" id="modal-create-lab">
   <div class="modal">
     <div class="modal-header"><h3>Add New Laboratory</h3><button class="modal-close" onclick="closeModal('modal-create-lab')">&times;</button></div>
@@ -1303,9 +1292,7 @@ html { font-size: 15px; }
   </div>
 </div>
 
-<!-- ════════════════════════════════════════════════════════════
-     MODALS — Events
-════════════════════════════════════════════════════════════ -->
+
 
 <!-- Create Event -->
 <div class="modal-overlay" id="modal-create-event">
@@ -1375,7 +1362,7 @@ html { font-size: 15px; }
   </div>
 </div>
 
-<!-- Edit Event -->
+
 <div class="modal-overlay" id="modal-edit-event">
   <div class="modal">
     <div class="modal-header">
@@ -1440,7 +1427,7 @@ html { font-size: 15px; }
   </div>
 </div>
 
-<!-- Delete Event -->
+
 <div class="modal-overlay" id="modal-delete-event">
   <div class="modal" style="max-width:420px;text-align:center;">
     <div style="display:flex;justify-content:center;margin-bottom:12px;"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
@@ -1461,9 +1448,7 @@ html { font-size: 15px; }
 </div>
 
 
-<!-- ════════════════════════════════════════════════════════════
-     APP SHELL
-════════════════════════════════════════════════════════════ -->
+
 <div class="app">
 
   <aside class="sidebar">
@@ -1501,7 +1486,7 @@ html { font-size: 15px; }
       <?php endif; ?>
 
 
-      <!-- ═══ OVERVIEW ════════════════════════════════════════ -->
+
       <?php if ($tab === 'overview'): ?>
         <div class="page-header">
           <div>
@@ -1559,7 +1544,7 @@ html { font-size: 15px; }
         </div>
 
 
-      <!-- ═══ USERS ════════════════════════════════════════════ -->
+
       <?php elseif ($tab === 'users'): ?>
         <div class="page-header">
           <div>
@@ -1642,7 +1627,7 @@ html { font-size: 15px; }
         </p>
 
 
-      <!-- ═══ LABS (FULLY FUNCTIONAL) ══════════════════════ -->
+
       <?php elseif ($tab === 'labs'): ?>
         <div class="page-header">
           <div>
@@ -1696,8 +1681,6 @@ html { font-size: 15px; }
           </div>
         <?php endif; ?>
 
-
-      <!-- ═══ EVENTS ═══════════════════════ -->
       <?php elseif ($tab === 'events'): ?>
         <div class="page-header">
           <div>
@@ -1766,7 +1749,6 @@ html { font-size: 15px; }
           </div>
         <?php endif; ?>
 
-      <!-- ═══ SETTINGS ════════════════════ -->
       <?php elseif ($tab === 'settings'): ?>
         <div class="page-header">
           <div>
@@ -1835,12 +1817,12 @@ html { font-size: 15px; }
 
       <?php endif; ?>
 
-    </div><!-- /content -->
-  </div><!-- /main -->
-</div><!-- /app -->
+    </div>
+  </div>
+</div>
 
 <script>
-// ── Modal helpers ──────────────────────────────────────────
+
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('.modal-overlay').forEach(function(o) {
@@ -1850,7 +1832,6 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(function(m) { m.classList.remove('open'); });
 });
 
-// ── User modals ────────────────────────────────────────────
 function openEditUserModal(id, username, email, role) {
   document.getElementById('edit-user-id').value  = id;
   document.getElementById('edit-username').value  = username;
@@ -1863,7 +1844,6 @@ function openDeleteUserModal(id) {
   openModal('modal-delete-user');
 }
 
-// Lab modals
 function openEditLabModal(id, number, className) {
   document.getElementById('edit-lab-id').value     = id;
   document.getElementById('edit-lab-number').value = number;
@@ -1876,19 +1856,17 @@ function openDeleteLabModal(id, name) {
   openModal('modal-delete-lab');
 }
 
-// ── Event modals ───────────────────────────────────────────
 function openEditEventModal(id, labId, name, desc, date, tStart, tEnd) {
   document.getElementById('edit-event-id').value    = id;
   document.getElementById('edit-event-name').value  = name;
   document.getElementById('edit-event-desc').value  = desc;
   document.getElementById('edit-event-date').value  = date;
 
-  // Select the matching lab option
   var labSel = document.getElementById('edit-event-lab');
   for (var i = 0; i < labSel.options.length; i++) {
     if (labSel.options[i].value === labId) { labSel.selectedIndex = i; break; }
   }
-  // Select time options
+
   function setSelect(selId, val) {
     var s = document.getElementById(selId);
     for (var i = 0; i < s.options.length; i++) {
@@ -1904,7 +1882,6 @@ function openDeleteEventModal(id) {
   openModal('modal-delete-event');
 }
 
-// ── Flash auto-dismiss ─────────────────────────────────────
 (function() {
   var f = document.querySelector('.flash');
   if (!f) return;
